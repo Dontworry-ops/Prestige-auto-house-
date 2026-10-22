@@ -180,7 +180,7 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x9a5938);
-        camera = new THREE.PerspectiveCamera(43, 1, 0.1, 100);
+        camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
         camera.position.set(0, 9.5, 0.01);
         camera.up.set(0, 0, -1);
         camera.lookAt(0, 0, 0);
@@ -202,27 +202,41 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
         scene.add(desert);
 
         const road = new THREE.Mesh(
-          new THREE.PlaneGeometry(12, 100),
-          new THREE.MeshStandardMaterial({ color: 0x282725, roughness: 0.96 })
+          new THREE.PlaneGeometry(6.8, 100),
+          new THREE.MeshStandardMaterial({ color: 0x34302b, roughness: 1 })
         );
         road.rotation.x = -Math.PI / 2;
         road.position.set(0, -0.08, -2);
         scene.add(road);
 
-        const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0xd4a078, roughness: 1 });
-        [-6.05, 6.05].forEach(x => {
-          const edge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.025, 100), edgeMaterial);
+        const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0xb78b68, roughness: 1 });
+        [-3.42, 3.42].forEach(x => {
+          const edge = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.012, 100), edgeMaterial);
           edge.position.set(x, -0.055, -2);
           scene.add(edge);
         });
 
-        const circleMark = new THREE.Mesh(
-          new THREE.TorusGeometry(2.5, 0.035, 5, 120),
-          new THREE.MeshBasicMaterial({ color: 0x181716, transparent: true, opacity: 0.8 })
-        );
-        circleMark.rotation.x = Math.PI / 2;
-        circleMark.position.set(0, -0.045, 0);
-        scene.add(circleMark);
+        const laneMaterial = new THREE.MeshBasicMaterial({ color: 0xe4d2b8, transparent: true, opacity: 0.42 });
+        for (let z = -48; z < 48; z += 5.5) {
+          const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 2.6), laneMaterial);
+          dash.rotation.x = -Math.PI / 2;
+          dash.position.set(0, -0.052, z - 2);
+          scene.add(dash);
+        }
+
+        // Subtle broken tyre scuffs on the dirt replace the hard black ring.
+        const scuffMaterial = new THREE.LineBasicMaterial({ color: 0x39261d, transparent: true, opacity: 0.22 });
+        [2.38, 2.58].forEach((radius, trackIndex) => {
+          const points: THREE.Vector3[] = [];
+          for (let i = 0; i <= 180; i++) {
+            const angle = (i / 180) * Math.PI * 2;
+            const gap = angle > 0.12 && angle < 0.3;
+            if (gap) continue;
+            points.push(new THREE.Vector3(Math.cos(angle) * radius, -0.055 + trackIndex * 0.001, Math.sin(angle) * radius));
+          }
+          const geometry = new THREE.BufferGeometry().setFromPoints(points);
+          scene.add(new THREE.Line(geometry, scuffMaterial));
+        }
 
         const loader = new GLTFLoader();
         loader.load(
@@ -236,10 +250,10 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
             const center = bounds.getCenter(new THREE.Vector3());
             gltf.scene.position.sub(center);
             const largestDimension = Math.max(size.x, size.y, size.z) || 1;
-            const scale = 4.8 / largestDimension;
+            const scale = 6.4 / largestDimension;
             carRoot.scale.setScalar(scale);
             // The GLB is centred above its ground plane; lift it back onto the road.
-            carRoot.position.y = center.y * scale + 0.035;
+            carRoot.position.y = (size.y * scale) / 2 + 0.035;
             carRoot.rotation.x = 0;
             scene.add(carRoot);
             setAssetReady(true);
@@ -543,8 +557,6 @@ function App() {
             </h2>
             <p>Scroll to move through the scene.</p>
           </div>
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
           <MercedesDriftScene scrollProgress={scrollProgress} />
           <div className="drift-caption">
             <span>01 / CONTROL</span>
