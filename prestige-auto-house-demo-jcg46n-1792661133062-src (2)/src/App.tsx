@@ -236,7 +236,7 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
           }
           const geometry = new THREE.BufferGeometry().setFromPoints(points);
           scene.add(new THREE.Line(geometry, scuffMaterial));
-        }
+        });
 
         const loader = new GLTFLoader();
         loader.load(
