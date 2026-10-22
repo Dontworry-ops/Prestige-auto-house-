@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Browse vehicles and open vehicle details",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "vehicle inventory",
+      "make filter",
+      "vehicle detail dialog"
+    ],
+    "description": "Verifies the visitor can filter inventory and open a matching vehicle detail.",
+    "steps": [
+      "Scroll to the inventory section",
+      "Select Porsche in the make filter",
+      "Open the Porsche vehicle card"
+    ],
+    "expected": "Matching inventory remains visible and the selected vehicle detail dialog opens."
+  },
+  {
+    "name": "Request a quotation for a specific car",
+    "viewport": "desktop",
+    "covers": [
+      "vehicle sourcing quotation form",
+      "required field validation",
+      "demo confirmation"
+    ],
+    "description": "Verifies a visitor can request help sourcing a car and receives a clear demo confirmation.",
+    "steps": [
+      "Scroll to Looking for something specific",
+      "Submit the empty form and verify required fields block submission",
+      "Enter a desired vehicle, budget, name, email and phone",
+      "Submit the request"
+    ],
+    "expected": "The form validates required fields and shows a confirmation that no personal data was sent to a real dealership."
+  },
+  {
+    "name": "Scroll through the desert drift story and inventory reveal",
+    "viewport": "mobile",
+    "covers": [
+      "scroll-driven top-down drift circle",
+      "desert sunset scene",
+      "straight-road drift phase",
+      "animated white tyre smoke",
+      "vehicle names emerging from smoke",
+      "mobile layout",
+      "reduced motion support"
+    ],
+    "description": "Verifies the existing drift story remains responsive and transitions to the vehicle inventory without removing existing listing features.",
+    "steps": [
+      "Open the site on a mobile viewport",
+      "Scroll through the cinematic car scene",
+      "Verify the desert sunset scene and top-down drift presentation",
+      "Continue through the smoke transition to the vehicle inventory"
+    ],
+    "expected": "The drift story progresses through the circle and straight-road phases, the smoke and vehicle-name reveal remain visible, and the existing inventory follows."
+  },
+  {
+    "name": "Recover from a vehicle search with no matches",
+    "viewport": "desktop",
+    "covers": [
+      "vehicle search",
+      "empty inventory state",
+      "clear filters"
+    ],
+    "description": "Verifies the visitor can recover from a search that finds no matching vehicles.",
+    "steps": [
+      "Search for a model that is not listed",
+      "Verify the no-results message",
+      "Choose Clear all filters"
+    ],
+    "expected": "A no-results state is shown and clearing filters restores the vehicle inventory."
+  },
+  {
+    "name": "Load the Mercedes-AMG GT3 model only when a real asset is uploaded",
+    "viewport": "desktop",
+    "covers": [
+      "Mercedes-AMG GT3 GLB asset loading",
+      "honest missing-asset fallback",
+      "3D drift scene"
+    ],
+    "description": "Verifies the real-time 3D scene only replaces the photograph after the uploaded GLB loads successfully.",
+    "steps": [
+      "Open the drift experience without an uploaded model",
+      "Verify the pending-asset message and fallback photo",
+      "Upload the supplied Mercedes-AMG GT3 GLB to the requested resource slot",
+      "Reload the scene"
+    ],
+    "expected": "Without the GLB, the site clearly shows the pending state; after the valid GLB loads, the correctly framed WebGL 3D scene appears and the smoke transition reveals vehicle names only after the smoke phase."
+  }
+]
