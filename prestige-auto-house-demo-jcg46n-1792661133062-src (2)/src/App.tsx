@@ -152,10 +152,11 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
           carRoot.rotation.z = Math.sin(angle * 2) * 0.035;
         } else {
           const phase = Math.min(1, (progress - circleEnd) / (1 - circleEnd));
-          carRoot.position.x = Math.sin(phase * Math.PI * 3) * (0.6 + phase * 0.7);
-          carRoot.position.z = 2.45 - phase * 8.2;
-          carRoot.rotation.y = Math.PI + Math.sin(phase * Math.PI * 5) * 0.2;
-          carRoot.rotation.z = Math.sin(phase * Math.PI * 5) * 0.075;
+          // Keep the car within the visible road and drift it forward down the centre.
+          carRoot.position.x = Math.sin(phase * Math.PI * 3) * (0.35 + phase * 0.45);
+          carRoot.position.z = 2.1 - phase * 3.8;
+          carRoot.rotation.y = Math.PI + Math.sin(phase * Math.PI * 5) * 0.24;
+          carRoot.rotation.z = Math.sin(phase * Math.PI * 5) * 0.055;
         }
         carRoot.position.y = 0.12 + Math.sin(progress * Math.PI * 16) * 0.025;
       }
@@ -180,8 +181,9 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x9a5938);
-        camera = new THREE.PerspectiveCamera(43, 1, 0.1, 100);
-        camera.position.set(0, 9.5, 0.01);
+        camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+        // A higher near-overhead camera keeps the full vehicle visible throughout the scroll.
+        camera.position.set(0, 12.5, 0.01);
         camera.up.set(0, 0, -1);
         camera.lookAt(0, 0, 0);
 
@@ -202,27 +204,31 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
         scene.add(desert);
 
         const road = new THREE.Mesh(
-          new THREE.PlaneGeometry(12, 100),
-          new THREE.MeshStandardMaterial({ color: 0x282725, roughness: 0.96 })
+          new THREE.PlaneGeometry(8.5, 100),
+          new THREE.MeshStandardMaterial({ color: 0x34312d, roughness: 0.96 })
         );
         road.rotation.x = -Math.PI / 2;
         road.position.set(0, -0.08, -2);
         scene.add(road);
 
         const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0xd4a078, roughness: 1 });
-        [-6.05, 6.05].forEach(x => {
+        [-4.28, 4.28].forEach(x => {
           const edge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.025, 100), edgeMaterial);
           edge.position.set(x, -0.055, -2);
           scene.add(edge);
         });
 
-        const circleMark = new THREE.Mesh(
-          new THREE.TorusGeometry(2.5, 0.035, 5, 120),
-          new THREE.MeshBasicMaterial({ color: 0x181716, transparent: true, opacity: 0.8 })
-        );
-        circleMark.rotation.x = Math.PI / 2;
-        circleMark.position.set(0, -0.045, 0);
-        scene.add(circleMark);
+        // Broken, subtle tyre marks suggest the drift circle without a hard graphic ring.
+        const scuffMaterial = new THREE.LineBasicMaterial({ color: 0x39261d, transparent: true, opacity: 0.24 });
+        [2.35, 2.52].forEach((radius, trackIndex) => {
+          const points: THREE.Vector3[] = [];
+          for (let i = 0; i <= 180; i++) {
+            const angle = (i / 180) * Math.PI * 2;
+            if (angle > 0.12 && angle < 0.32) continue;
+            points.push(new THREE.Vector3(Math.cos(angle) * radius, -0.052 + trackIndex * 0.001, Math.sin(angle) * radius));
+          }
+          scene!.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), scuffMaterial));
+        });
 
         const loader = new GLTFLoader();
         loader.load(
@@ -236,10 +242,13 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
             const center = bounds.getCenter(new THREE.Vector3());
             gltf.scene.position.sub(center);
             const largestDimension = Math.max(size.x, size.y, size.z) || 1;
-            const scale = 4.8 / largestDimension;
+            // Normalize the actual model bounds so wildly different source units cannot make it tiny.
+            const scale = 6.2 / largestDimension;
             carRoot.scale.setScalar(scale);
-            // The GLB is centred above its ground plane; lift it back onto the road.
-            carRoot.position.y = center.y * scale + 0.035;
+            // Centre the model and place its lowest point just above the road.
+            carRoot.position.y = (size.y * scale) / 2 + 0.035;
+            // Most car GLBs use X as the long axis; align that axis with the road (Z).
+            if (size.x > size.z) gltf.scene.rotation.y = Math.PI / 2;
             carRoot.rotation.x = 0;
             scene.add(carRoot);
             setAssetReady(true);
