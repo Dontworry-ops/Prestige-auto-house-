@@ -271,8 +271,8 @@ button {
 .drift-car {
   position: absolute;
   z-index: 2;
-  width: min(68vw, 780px);
-  height: min(66vh, 660px);
+  width: min(82vw, 980px);
+  height: min(78vh, 780px);
   left: 50%;
   top: 51%;
   transform: translate(-50%, -50%);
