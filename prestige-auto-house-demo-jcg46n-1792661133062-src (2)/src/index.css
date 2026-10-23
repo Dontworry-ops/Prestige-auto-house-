@@ -1443,3 +1443,53 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .drift-car { transform: none; transition: none; }
 }
+
+
+/* Premium full-frame automotive video: remove decorative orbit rings and let the car own the scene. */
+.drift-car {
+  inset: 0 !important;
+  z-index: 2;
+  overflow: hidden;
+  background: #050607;
+}
+.drift-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 55%;
+  opacity: .88;
+  mix-blend-mode: normal;
+  filter: contrast(1.08) saturate(.82);
+}
+.orbit,
+.orbit-one,
+.orbit-two {
+  display: none !important;
+}
+.drift-sticky::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(4,5,7,.82) 0%, rgba(4,5,7,.48) 38%, rgba(4,5,7,.08) 72%, rgba(4,5,7,.28) 100%),
+              linear-gradient(0deg, rgba(4,5,7,.56), transparent 40%, rgba(4,5,7,.18));
+}
+.drift-copy,
+.drift-caption,
+.scroll-meter,
+.drift-instruction,
+.scene-counter,
+.smoke-listings {
+  z-index: 4;
+}
+.tyre-smoke {
+  z-index: 3;
+}
+@media (max-width: 700px) {
+  .drift-car { inset: 0 !important; }
+  .drift-hero-video { object-position: center; }
+}
