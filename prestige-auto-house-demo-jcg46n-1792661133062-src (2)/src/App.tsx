@@ -135,7 +135,7 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
   }, []);
 
   return (
-    <div className="drift-car" style={{ opacity: Math.max(0.28, 1 - scrollProgress * 0.72) }}>
+    <div className="drift-car" style={{ opacity: Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.48 ? 1 : (1 - scrollProgress) / 0.52)) }}>
       <video
         ref={videoRef}
         className="drift-hero-video"
