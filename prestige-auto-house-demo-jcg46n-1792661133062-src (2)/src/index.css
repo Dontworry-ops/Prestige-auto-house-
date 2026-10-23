@@ -1322,3 +1322,27 @@ button {
   .smoke-listings span { font-size: 6px; padding: 8px 7px; letter-spacing: .06em; }
   .quote-form-pair { grid-template-columns: 1fr; }
 }
+
+/* Prestige Auto House: continuously looping premium vehicle bubbles */
+.vehicle-bubble-section { margin: 72px 0 0; padding: 54px 0 24px; overflow: hidden; border-top: 1px solid #252628; background: radial-gradient(ellipse at 50% 0%, #1c1d1e 0%, #08090a 66%); }
+.bubble-heading { padding: 0 4% 28px; display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.bubble-heading h3 { margin: 12px 0 0; font: 500 clamp(30px, 4vw, 48px)/1.05 Manrope, sans-serif; letter-spacing: -.055em; }
+.bubble-heading h3 em { color: #bfc0bc; }
+.bubble-heading > span, .bubble-disclaimer { color: #77797b; font-size: 8px; letter-spacing: .15em; }
+.vehicle-bubble-viewport { width: 100%; overflow: hidden; padding: 10px 0 20px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+.vehicle-bubble-track { display: flex; align-items: stretch; gap: 18px; width: max-content; padding: 0 18px; animation: vehicleBubbleDrift 42s linear infinite reverse; will-change: transform; }
+.vehicle-bubble-viewport:hover .vehicle-bubble-track, .vehicle-bubble-viewport:focus-within .vehicle-bubble-track { animation-play-state: paused; }
+.vehicle-bubble { width: 260px; flex: 0 0 260px; padding: 9px; display: flex; flex-direction: column; text-align: left; color: #f6f6f4; background: linear-gradient(145deg, #202122, #101112 72%); border: 1px solid #393a3b; border-radius: 28px; box-shadow: 0 14px 38px #0005, inset 0 1px #ffffff0b; cursor: pointer; transition: border-color .25s ease, transform .25s ease, background .25s ease; }
+.vehicle-bubble:hover, .vehicle-bubble:focus-visible { border-color: #a9aaa4; transform: translateY(-4px); outline: none; }
+.vehicle-bubble-image { position: relative; display: block; height: 145px; overflow: hidden; border-radius: 21px; background: #191a1b; }
+.vehicle-bubble-image img { width: 100%; height: 100%; display: block; object-fit: cover; filter: saturate(.78); transition: transform .5s ease, filter .5s ease; }
+.vehicle-bubble:hover .vehicle-bubble-image img, .vehicle-bubble:focus-visible .vehicle-bubble-image img { transform: scale(1.06); filter: saturate(1); }
+.vehicle-bubble-arrow { position: absolute; right: 10px; bottom: 10px; width: 31px; height: 31px; display: grid; place-items: center; border-radius: 50%; color: #101112; background: #eeeee9; }
+.vehicle-bubble-copy { display: grid; gap: 7px; padding: 15px 10px 13px; }
+.vehicle-bubble-copy > span:first-child { color: #a3a49f; font-size: 9px; letter-spacing: .13em; text-transform: uppercase; }
+.vehicle-bubble-copy strong { font: 500 18px/1.2 Manrope, sans-serif; letter-spacing: -.035em; }
+.vehicle-bubble-copy .vehicle-bubble-price { color: #e1e1dc; font-size: 12px; }
+.bubble-disclaimer { margin: 16px 4% 0; letter-spacing: .04em; }
+@keyframes vehicleBubbleDrift { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .vehicle-bubble-track { animation: none; } }
+@media (max-width: 600px) { .vehicle-bubble-section { margin-top: 45px; padding-top: 38px; } .bubble-heading { align-items: start; flex-direction: column; padding-inline: 6%; } .vehicle-bubble { width: 220px; flex-basis: 220px; border-radius: 24px; } .vehicle-bubble-image { height: 122px; border-radius: 17px; } .vehicle-bubble-track { gap: 12px; animation-duration: 34s; } }
