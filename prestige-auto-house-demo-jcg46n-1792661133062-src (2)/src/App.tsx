@@ -135,7 +135,7 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
   }, []);
 
   return (
-    <div className="drift-car" style={{ opacity: Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.48 ? 1 : (1 - scrollProgress) / 0.52)) }}>
+    <div className="drift-car" style={{ opacity: Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.78 ? 1 : (1 - scrollProgress) / 0.22)) }}>
       <video
         ref={videoRef}
         className="drift-hero-video"
@@ -263,7 +263,7 @@ function App() {
     setSort('featured');
   };
   const driftStyle = {
-    '--drift-opacity': Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.48 ? 1 : (1 - scrollProgress) / 0.52)),
+    '--drift-opacity': Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.78 ? 1 : (1 - scrollProgress) / 0.22)),
   } as React.CSSProperties;
 
   return (
