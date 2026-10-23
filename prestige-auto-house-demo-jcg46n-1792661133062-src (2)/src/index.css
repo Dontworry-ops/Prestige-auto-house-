@@ -1493,3 +1493,60 @@ button {
   .drift-car { inset: 0 !important; }
   .drift-hero-video { object-position: center; }
 }
+
+
+/* Simplified luxury video transition: no orbit graphics, fake smoke, counters or floating car labels. */
+.drift-story {
+  height: 210vh;
+  background: #050607;
+}
+.drift-sticky {
+  background: #050607 !important;
+}
+.drift-sticky:before {
+  background: linear-gradient(90deg, rgba(4,5,7,.74), rgba(4,5,7,.22) 62%, rgba(4,5,7,.18)) !important;
+  z-index: 3;
+  pointer-events: none;
+}
+.drift-car {
+  inset: 0 !important;
+  z-index: 1;
+  transform: none !important;
+  opacity: var(--drift-opacity, 1);
+  transition: opacity .16s linear;
+}
+.drift-hero-video {
+  object-fit: cover;
+  object-position: center 55%;
+  opacity: .92;
+  filter: contrast(1.07) saturate(.84);
+}
+.drift-copy {
+  z-index: 5;
+  top: auto !important;
+  left: clamp(24px, 7vw, 110px) !important;
+  bottom: clamp(54px, 10vh, 110px) !important;
+  max-width: 620px;
+  pointer-events: none;
+}
+.drift-copy h2 {
+  font-size: clamp(38px, 6vw, 82px) !important;
+  line-height: .98;
+  margin: 18px 0 0;
+}
+.drift-copy .micro-label {
+  letter-spacing: .2em;
+}
+.tyre-smoke, .smoke-listings, .orbit, .drift-caption,
+.scroll-meter, .drift-instruction, .scene-counter {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  .drift-story { height: 185vh; }
+  .drift-copy {
+    left: 22px !important;
+    right: 22px !important;
+    bottom: 52px !important;
+  }
+  .drift-hero-video { object-position: 57% center; }
+}
