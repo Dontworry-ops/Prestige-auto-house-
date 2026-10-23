@@ -120,56 +120,37 @@ const vehicles: Car[] = [
 const money = (value: number) => 'R ' + value.toLocaleString('en-ZA');
 
 function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef(scrollProgress);
   progressRef.current = scrollProgress;
-  const videoRef = useRef<HTMLVideoElement>(null);
 
-  // A real video can be added later at /videos/prestige-drift-hero.mp4.
-  // Until then, the licensed-source photo and scroll-linked smoke remain the graceful fallback.
+  // The real drift clip plays continuously; the surrounding smoke and scene transition are scroll-linked.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    const syncPlayback = () => {
-      if (!video.duration || !Number.isFinite(video.duration)) return;
-      // Keep the movie tied to the scroll story when metadata is available.
-      try {
-        const targetTime = Math.min(video.duration - 0.05, Math.max(0, progressRef.current * video.duration));
-        if (Math.abs(video.currentTime - targetTime) > 0.22) video.currentTime = targetTime;
-      } catch {
-        // Metadata / browser seeking can briefly be unavailable; don't interrupt the page.
-      }
+    const tryPlay = () => {
+      const result = video.play();
+      if (result && typeof result.catch === 'function') result.catch(() => {});
     };
-    const onScroll = () => syncPlayback();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    video.addEventListener('loadedmetadata', syncPlayback);
-    syncPlayback();
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      video.removeEventListener('loadedmetadata', syncPlayback);
-    };
+    video.addEventListener('canplay', tryPlay);
+    tryPlay();
+    return () => video.removeEventListener('canplay', tryPlay);
   }, []);
 
   return (
-    <div className="drift-car">
+    <div className="drift-car" style={{ opacity: Math.max(0.18, 1 - scrollProgress * 0.82) }}>
       <video
         ref={videoRef}
-        className="drift-fallback-image drift-hero-video"
+        className="drift-hero-video"
         src="https://videos.pexels.com/video-files/14854556/14854556-uhd_2560_1440_30fps.mp4"
         poster="https://images.pexels.com/videos/14854556/pexels-photo-14854556.jpeg?auto=compress&w=1260&h=750&dpr=1"
         muted
+        autoPlay
+        loop
         playsInline
-        preload="metadata"
+        preload="auto"
         aria-label="Prestige Auto House cinematic sports car drift scene"
       />
-      <img
-        className="drift-still-fallback"
-        src="https://images.unsplash.com/photo-1768466586643-37371857018e?auto=format&fit=crop&fm=jpg&q=90&w=2400"
-        alt="Sports car drifting on a track with cinematic tyre smoke"
-      />
-      <div className="drift-media-hint" aria-hidden="true">
-        <span className="asset-status-dot" />
-        <span>THE DRIVE · A CINEMATIC MOMENT</span>
-      </div>
     </div>
   );
 }
