@@ -121,16 +121,13 @@ const money = (value: number) => 'R ' + value.toLocaleString('en-ZA');
 
 function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const progressRef = useRef(scrollProgress);
-  progressRef.current = scrollProgress;
 
-  // The real drift clip plays continuously; the surrounding smoke and scene transition are scroll-linked.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const tryPlay = () => {
-      const result = video.play();
-      if (result && typeof result.catch === 'function') result.catch(() => {});
+      const playback = video.play();
+      if (playback && typeof playback.catch === 'function') playback.catch(() => {});
     };
     video.addEventListener('canplay', tryPlay);
     tryPlay();
@@ -138,18 +135,18 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
   }, []);
 
   return (
-    <div className="drift-car" style={{ opacity: Math.max(0.18, 1 - scrollProgress * 0.82) }}>
+    <div className="drift-car" style={{ opacity: Math.max(0.28, 1 - scrollProgress * 0.72) }}>
       <video
         ref={videoRef}
         className="drift-hero-video"
-        src="https://videos.pexels.com/video-files/14854556/14854556-uhd_2560_1440_30fps.mp4"
-        poster="https://images.pexels.com/videos/14854556/pexels-photo-14854556.jpeg?auto=compress&w=1260&h=750&dpr=1"
+        src="https://videos.pexels.com/video-files/16532416/16532416-hd_1920_1080_60fps.mp4"
+        poster="https://images.pexels.com/videos/16532416/bmw-fast-car-freeway-moving-car-16532416.jpeg?auto=compress&w=1260&h=750&dpr=1"
         muted
         autoPlay
         loop
         playsInline
         preload="auto"
-        aria-label="Prestige Auto House cinematic sports car drift scene"
+        aria-label="Cinematic BMW driving scene for Prestige Auto House"
       />
     </div>
   );
