@@ -192,7 +192,7 @@ function App() {
           const rect = node.getBoundingClientRect();
           const range = Math.max(1, rect.height - window.innerHeight);
           setScrollProgress(
-            Math.min(1, Math.max(0, (window.innerHeight - rect.top) / range))
+            Math.min(1, Math.max(0, -rect.top / range))
           );
         }
         ticking = false;
