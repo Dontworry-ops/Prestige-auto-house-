@@ -323,6 +323,7 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [brandMenuOpen, setBrandMenuOpen] = useState(false);
   const [introComplete, setIntroComplete] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [quoteSent, setQuoteSent] = useState(false);
@@ -453,18 +454,25 @@ function App() {
         ARE DEMONSTRATIONS
       </div>
       <header className="site-nav">
-        <a
-          className="auto-brand"
-          href="#home"
-          aria-label="Prestige Auto House home"
-        >
-          <span className="brand-emblem">
-            P<span>.</span>
-          </span>
-          <span>
-            PRESTIGE <small>AUTO HOUSE</small>
-          </span>
-        </a>
+        <div className="brand-menu-wrap">
+          <button
+            className="auto-brand brand-menu-trigger"
+            type="button"
+            aria-label="Open Prestige vehicle categories"
+            aria-expanded={brandMenuOpen}
+            onClick={() => setBrandMenuOpen(open => !open)}
+          >
+            <span className="brand-emblem">P<span>.</span></span>
+            <span>PRESTIGE <small>AUTO HOUSE</small></span>
+            <ChevronDown className={brandMenuOpen ? 'brand-chevron is-open' : 'brand-chevron'} size={15} />
+          </button>
+          {brandMenuOpen && (
+            <div className="brand-dropdown">
+              <a href="#inventory" onClick={() => { setBrandMenuOpen(false); setMake('All makes'); }}>Pre-owned vehicles <span>Explore the collection</span></a>
+              <a href="#find-a-car" onClick={() => { setBrandMenuOpen(false); setQuote(current => ({ ...current, desiredCar: 'New vehicle enquiry' })); }}>New vehicles <span>Request a new-car enquiry</span></a>
+            </div>
+          )}
+        </div>
         <button
           className="mobile-menu"
           aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
@@ -473,11 +481,17 @@ function App() {
           {menuOpen ? <X /> : <Menu />}
         </button>
         <nav className={menuOpen ? 'site-links expanded' : 'site-links'}>
-          <a href="#experience" onClick={() => setMenuOpen(false)}>
-            Experience
+          <a href="#home" onClick={() => setMenuOpen(false)}>
+            Home
           </a>
           <a href="#inventory" onClick={() => setMenuOpen(false)}>
-            Inventory
+            Pre-owned
+          </a>
+          <a href="#find-a-car" onClick={() => setMenuOpen(false)}>
+            New vehicles
+          </a>
+          <a href="#experience" onClick={() => setMenuOpen(false)}>
+            Experience
           </a>
           <a href="#about" onClick={() => setMenuOpen(false)}>
             Our standard
@@ -641,6 +655,45 @@ function App() {
             <SlidersHorizontal size={15} /> Clear filters
           </button>
         </div>
+        <section className="vehicle-bubble-section" aria-label="Explore the vehicle collection">
+          <div className="bubble-heading">
+            <div>
+              <div className="micro-label">THE PRESTIGE EDIT</div>
+              <h3>Keep your eyes <em>moving.</em></h3>
+            </div>
+            <span>SELECT A VEHICLE TO EXPLORE</span>
+          </div>
+          <div className="vehicle-bubble-viewport">
+            <div className="vehicle-bubble-track">
+              {[...vehicles, ...vehicles].map((car, index) => {
+                const duplicate = index >= vehicles.length;
+                return (
+                  <button
+                    className="vehicle-bubble"
+                    key={`${car.id}-bubble-${index}`}
+                    type="button"
+                    onClick={() => setSelected(car)}
+                    tabIndex={duplicate ? -1 : 0}
+                    aria-hidden={duplicate}
+                    aria-label={`Explore ${car.year} ${car.make} ${car.model}`}
+                  >
+                    <span className="vehicle-bubble-image">
+                      <img src={car.image} alt="" loading="lazy" />
+                      <span className="vehicle-bubble-arrow"><ArrowUpRight size={17} /></span>
+                    </span>
+                    <span className="vehicle-bubble-copy">
+                      <span>{car.make} · {car.year}</span>
+                      <strong>{car.model}</strong>
+                      <span className="vehicle-bubble-price">{money(car.price)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="bubble-disclaimer">Sample vehicle cards for design demonstration. Availability and prices must be verified.</p>
+        </section>
+
         {filtered.length ? (
           <div className="vehicle-grid">
             {filtered.map((car, index) => (
@@ -704,44 +757,7 @@ function App() {
           <span>DETAILS AND PRICES ARE FOR DESIGN DEMONSTRATION ONLY</span>
         </div>
 
-        <section className="vehicle-bubble-section" aria-label="Explore the vehicle collection">
-          <div className="bubble-heading">
-            <div>
-              <div className="micro-label">THE PRESTIGE EDIT</div>
-              <h3>Keep your eyes <em>moving.</em></h3>
-            </div>
-            <span>SELECT A VEHICLE TO EXPLORE</span>
-          </div>
-          <div className="vehicle-bubble-viewport">
-            <div className="vehicle-bubble-track">
-              {[...vehicles, ...vehicles].map((car, index) => {
-                const duplicate = index >= vehicles.length;
-                return (
-                  <button
-                    className="vehicle-bubble"
-                    key={`${car.id}-bubble-${index}`}
-                    type="button"
-                    onClick={() => setSelected(car)}
-                    tabIndex={duplicate ? -1 : 0}
-                    aria-hidden={duplicate}
-                    aria-label={`Explore ${car.year} ${car.make} ${car.model}`}
-                  >
-                    <span className="vehicle-bubble-image">
-                      <img src={car.image} alt="" loading="lazy" />
-                      <span className="vehicle-bubble-arrow"><ArrowUpRight size={17} /></span>
-                    </span>
-                    <span className="vehicle-bubble-copy">
-                      <span>{car.make} · {car.year}</span>
-                      <strong>{car.model}</strong>
-                      <span className="vehicle-bubble-price">{money(car.price)}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <p className="bubble-disclaimer">Sample vehicle cards for design demonstration. Availability and prices must be verified.</p>
-        </section>
+
       </section>
 
       <section className="quote-search-section" id="find-a-car">
