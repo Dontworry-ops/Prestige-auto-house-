@@ -263,12 +263,7 @@ function App() {
     setSort('featured');
   };
   const driftStyle = {
-    '--drift-x': `${Math.sin(scrollProgress * Math.PI * 2) * 24}vw`,
-    '--drift-y': `${Math.sin(scrollProgress * Math.PI * 2) * -6}vh`,
-    '--drift-rotate': `${Math.sin(scrollProgress * Math.PI * 2) * -7}deg`,
-    '--drift-scale': 1 + Math.sin(scrollProgress * Math.PI) * 0.12,
-    '--drift-opacity': Math.max(0.12, 1 - scrollProgress * 0.88),
-    '--scene-glow': 0.12 + scrollProgress * 0.35,
+    '--drift-opacity': Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.48 ? 1 : (1 - scrollProgress) / 0.52)),
   } as React.CSSProperties;
 
   return (
@@ -375,44 +370,12 @@ function App() {
 
       <section className="drift-story" id="experience" ref={driftRef}>
         <div className="drift-sticky" style={driftStyle}>
-          <div className="drift-glow" />
-          <div className="tyre-smoke" style={{ opacity: scrollProgress < 0.52 ? 0.16 + scrollProgress * 0.35 : scrollProgress < 0.72 ? 0.34 + ((scrollProgress - 0.52) / 0.2) * 0.66 : Math.max(0, 1 - (scrollProgress - 0.72) / 0.2), transform: `translateX(${Math.sin(scrollProgress * Math.PI * 2) * 5}vw) scale(${0.85 + scrollProgress * 0.9})` }} aria-hidden="true">
-            <span className="smoke-puff smoke-puff-one" />
-            <span className="smoke-puff smoke-puff-two" />
-            <span className="smoke-puff smoke-puff-three" />
-            <span className="smoke-puff smoke-puff-four" />
-          </div>
-          <div className="smoke-listings" aria-hidden="true" style={{ opacity: Math.min(1, Math.max(0, (scrollProgress - 0.72) / 0.22)) }}>
-            <span style={{ transform: `translateY(${(1 - scrollProgress) * -70}px) rotate(-4deg)` }}>PORSCHE 911 CARRERA</span>
-            <span style={{ transform: `translateY(${(1 - scrollProgress) * -110}px) rotate(3deg)` }}>BMW M4 COMPETITION</span>
-            <span style={{ transform: `translateY(${(1 - scrollProgress) * -90}px) rotate(-2deg)` }}>MERCEDES-AMG GT</span>
-            <span style={{ transform: `translateY(${(1 - scrollProgress) * -130}px) rotate(4deg)` }}>AUDI RS 5 SPORTBACK</span>
-          </div>
-          <div className="drift-copy">
-            <span className="micro-label">THE MOMENT BEFORE THE DRIVE</span>
-            <h2>
-              Feel the road.
-              <br />
-              <em>Forget the ordinary.</em>
-            </h2>
-            <p>Scroll to move through the scene.</p>
-          </div>
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
           <MercedesDriftScene scrollProgress={scrollProgress} />
-          <div className="drift-caption">
-            <span>01 / CONTROL</span>
-            <span>02 / MOMENTUM</span>
-            <span>03 / ARRIVAL</span>
-          </div>
-          <div className="scroll-meter">
-            <span style={{ height: `${Math.max(8, scrollProgress * 100)}%` }} />
-          </div>
-          <div className="drift-instruction">
-            KEEP SCROLLING <ChevronDown size={14} />
-          </div>
-          <div className="scene-counter">
-            0{Math.min(3, Math.floor(scrollProgress * 3) + 1)} <span>/ 03</span>
+          <div className="drift-copy">
+            <span className="micro-label">PRESTIGE AUTO HOUSE</span>
+            <h2>
+              Built to <em>stand apart.</em>
+            </h2>
           </div>
         </div>
       </section>
