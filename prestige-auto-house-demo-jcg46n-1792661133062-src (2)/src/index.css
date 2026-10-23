@@ -1550,3 +1550,53 @@ button {
   }
   .drift-hero-video { object-position: 57% center; }
 }
+
+
+/* Force the cinematic video to cover the entire viewport edge-to-edge. */
+.drift-story,
+.drift-sticky {
+  width: 100%;
+  max-width: none;
+}
+.drift-sticky {
+  height: 100svh;
+  min-height: 100vh;
+  top: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background: #050607 !important;
+}
+.drift-car {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+.drift-hero-video {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+@media (max-width: 700px) {
+  .drift-sticky { height: 100svh; min-height: 100vh; }
+  .drift-car { inset: 0 !important; width: 100% !important; height: 100% !important; }
+  .drift-hero-video { object-fit: cover !important; object-position: center center !important; }
+}
