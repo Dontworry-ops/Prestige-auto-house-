@@ -120,203 +120,56 @@ const vehicles: Car[] = [
 const money = (value: number) => 'R ' + value.toLocaleString('en-ZA');
 
 function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressRef = useRef(scrollProgress);
-  const [assetReady, setAssetReady] = useState(false);
-  const [assetError, setAssetError] = useState(false);
   progressRef.current = scrollProgress;
+  const videoRef = useRef<HTMLVideoElement>(null);
 
+  // A real video can be added later at /videos/prestige-drift-hero.mp4.
+  // Until then, the licensed-source photo and scroll-linked smoke remain the graceful fallback.
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    let active = true;
-    let renderer: THREE.WebGLRenderer | undefined;
-    let frame = 0;
-    let carRoot: THREE.Group | undefined;
-    let camera: THREE.PerspectiveCamera | undefined;
-    let scene: THREE.Scene | undefined;
-    let resizeObserver: ResizeObserver | undefined;
-
-    const renderScene = () => {
-      if (!active || !renderer || !scene || !camera) return;
-      const progress = progressRef.current;
-      if (carRoot) {
-        const circleEnd = 0.58;
-        if (progress < circleEnd) {
-          const phase = progress / circleEnd;
-          const angle = phase * Math.PI * 2;
-          const radius = 2.45;
-          carRoot.position.x = Math.cos(angle) * radius;
-          carRoot.position.z = Math.sin(angle) * radius;
-          carRoot.rotation.y = -angle + Math.PI / 2;
-          carRoot.rotation.z = Math.sin(angle * 2) * 0.035;
-        } else {
-          const phase = Math.min(1, (progress - circleEnd) / (1 - circleEnd));
-          // Keep the car within the visible road and drift it forward down the centre.
-          carRoot.position.x = Math.sin(phase * Math.PI * 3) * (0.35 + phase * 0.45);
-          carRoot.position.z = 2.1 - phase * 3.8;
-          carRoot.rotation.y = Math.PI + Math.sin(phase * Math.PI * 5) * 0.24;
-          carRoot.rotation.z = Math.sin(phase * Math.PI * 5) * 0.055;
-        }
-        carRoot.position.y = 0.12 + Math.sin(progress * Math.PI * 16) * 0.025;
-      }
-      renderer.render(scene, camera);
-      frame = window.requestAnimationFrame(renderScene);
-    };
-
-    const setup = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const syncPlayback = () => {
+      if (!video.duration || !Number.isFinite(video.duration)) return;
+      // Keep the movie tied to the scroll story when metadata is available.
       try {
-        renderer = new THREE.WebGLRenderer({
-          canvas,
-          alpha: true,
-          antialias: true,
-          powerPreference: 'high-performance',
-        });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
-        renderer.setSize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || 500, false);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.12;
-        renderer.shadowMap.enabled = true;
-
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x9a5938);
-        camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-        // A higher near-overhead camera keeps the full vehicle visible throughout the scroll.
-        camera.position.set(0, 12.5, 0.01);
-        camera.up.set(0, 0, -1);
-        camera.lookAt(0, 0, 0);
-
-        scene.add(new THREE.HemisphereLight(0xffd9a3, 0x493027, 2.5));
-        const keyLight = new THREE.DirectionalLight(0xffb66f, 3.7);
-        keyLight.position.set(-5, 9, 4);
-        scene.add(keyLight);
-        const rimLight = new THREE.DirectionalLight(0xffe0b2, 2.2);
-        rimLight.position.set(5, 5, -7);
-        scene.add(rimLight);
-
-        const desert = new THREE.Mesh(
-          new THREE.PlaneGeometry(80, 100),
-          new THREE.MeshStandardMaterial({ color: 0x9c6746, roughness: 1 })
-        );
-        desert.rotation.x = -Math.PI / 2;
-        desert.position.y = -0.12;
-        scene.add(desert);
-
-        const road = new THREE.Mesh(
-          new THREE.PlaneGeometry(8.5, 100),
-          new THREE.MeshStandardMaterial({ color: 0x34312d, roughness: 0.96 })
-        );
-        road.rotation.x = -Math.PI / 2;
-        road.position.set(0, -0.08, -2);
-        scene.add(road);
-
-        const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0xd4a078, roughness: 1 });
-        [-4.28, 4.28].forEach(x => {
-          const edge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.025, 100), edgeMaterial);
-          edge.position.set(x, -0.055, -2);
-          scene.add(edge);
-        });
-
-        // Broken, subtle tyre marks suggest the drift circle without a hard graphic ring.
-        const scuffMaterial = new THREE.LineBasicMaterial({ color: 0x39261d, transparent: true, opacity: 0.24 });
-        [2.35, 2.52].forEach((radius, trackIndex) => {
-          const points: THREE.Vector3[] = [];
-          for (let i = 0; i <= 180; i++) {
-            const angle = (i / 180) * Math.PI * 2;
-            if (angle > 0.12 && angle < 0.32) continue;
-            points.push(new THREE.Vector3(Math.cos(angle) * radius, -0.052 + trackIndex * 0.001, Math.sin(angle) * radius));
-          }
-          scene!.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), scuffMaterial));
-        });
-
-        const loader = new GLTFLoader();
-        loader.load(
-          '/resources/mercedes-amg-gt.glb',
-          gltf => {
-            if (!active || !scene) return;
-            carRoot = new THREE.Group();
-            carRoot.add(gltf.scene);
-            const bounds = new THREE.Box3().setFromObject(gltf.scene);
-            const size = bounds.getSize(new THREE.Vector3());
-            const center = bounds.getCenter(new THREE.Vector3());
-            gltf.scene.position.sub(center);
-            const largestDimension = Math.max(size.x, size.y, size.z) || 1;
-            // Normalize the actual model bounds so wildly different source units cannot make it tiny.
-            const scale = 6.2 / largestDimension;
-            carRoot.scale.setScalar(scale);
-            // Centre the model and place its lowest point just above the road.
-            carRoot.position.y = (size.y * scale) / 2 + 0.035;
-            // Most car GLBs use X as the long axis; align that axis with the road (Z).
-            if (size.x > size.z) gltf.scene.rotation.y = Math.PI / 2;
-            carRoot.rotation.x = 0;
-            scene.add(carRoot);
-            setAssetReady(true);
-            setAssetError(false);
-          },
-          undefined,
-          () => {
-            if (active) setAssetError(true);
-          }
-        );
-
-        resizeObserver = new ResizeObserver(() => {
-          if (!renderer || !camera || !canvas) return;
-          const width = Math.max(1, canvas.clientWidth);
-          const height = Math.max(1, canvas.clientHeight);
-          renderer.setSize(width, height, false);
-          camera.aspect = width / height;
-          camera.updateProjectionMatrix();
-        });
-        resizeObserver.observe(canvas);
-        renderScene();
+        const targetTime = Math.min(video.duration - 0.05, Math.max(0, progressRef.current * video.duration));
+        if (Math.abs(video.currentTime - targetTime) > 0.22) video.currentTime = targetTime;
       } catch {
-        if (active) setAssetError(true);
+        // Metadata / browser seeking can briefly be unavailable; don't interrupt the page.
       }
     };
-
-    void setup();
+    const onScroll = () => syncPlayback();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    video.addEventListener('loadedmetadata', syncPlayback);
+    syncPlayback();
     return () => {
-      active = false;
-      window.cancelAnimationFrame(frame);
-      resizeObserver?.disconnect();
-      if (scene) {
-        scene.traverse(object => {
-          const mesh = object as THREE.Mesh;
-          if (mesh.geometry) mesh.geometry.dispose();
-          if (mesh.material) {
-            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            materials.forEach(material => material.dispose());
-          }
-        });
-      }
-      renderer?.dispose();
+      window.removeEventListener('scroll', onScroll);
+      video.removeEventListener('loadedmetadata', syncPlayback);
     };
   }, []);
 
   return (
     <div className="drift-car">
+      <video
+        ref={videoRef}
+        className="drift-fallback-image drift-hero-video"
+        src="/videos/prestige-drift-hero.mp4"
+        poster="https://images.unsplash.com/photo-1768466586643-37371857018e?auto=format&fit=crop&fm=jpg&q=90&w=2400"
+        muted
+        playsInline
+        preload="metadata"
+        aria-label="Prestige Auto House cinematic sports car drift scene"
+      />
       <img
-        className="drift-fallback-image"
+        className="drift-still-fallback"
         src="https://images.unsplash.com/photo-1768466586643-37371857018e?auto=format&fit=crop&fm=jpg&q=90&w=2400"
-        alt="Sports car sliding sideways through a drift with tyre smoke on a track"
-        style={{ opacity: assetReady ? 0 : 1 }}
+        alt="Sports car drifting on a track with cinematic tyre smoke"
       />
-      <canvas
-        ref={canvasRef}
-        className="drift-3d-canvas"
-        aria-label="Interactive Mercedes-AMG GT3 3D drift scene"
-        style={{ opacity: assetReady ? 1 : 0 }}
-      />
-      {!assetReady && (
-        <div className="drift-asset-status" role="status">
-          <span className="asset-status-dot" />
-          <strong>{assetError ? '3D MODEL NOT LOADED' : '3D MODEL ASSET PENDING'}</strong>
-          <small>
-            Mercedes-AMG GT3 · Upload the GLB and confirm its licence allows commercial website use before the real 3D scene activates.
-          </small>
-        </div>
-      )}
+      <div className="drift-media-hint" aria-hidden="true">
+        <span className="asset-status-dot" />
+        <span>THE DRIVE · A CINEMATIC MOMENT</span>
+      </div>
     </div>
   );
 }
