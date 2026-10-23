@@ -154,8 +154,8 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
       <video
         ref={videoRef}
         className="drift-fallback-image drift-hero-video"
-        src="/videos/prestige-drift-hero.mp4"
-        poster="https://images.unsplash.com/photo-1768466586643-37371857018e?auto=format&fit=crop&fm=jpg&q=90&w=2400"
+        src="https://videos.pexels.com/video-files/14854556/14854556-uhd_2560_1440_30fps.mp4"
+        poster="https://images.pexels.com/videos/14854556/pexels-photo-14854556.jpeg?auto=compress&w=1260&h=750&dpr=1"
         muted
         playsInline
         preload="metadata"
