@@ -703,6 +703,45 @@ function App() {
           <span>DISPLAY INVENTORY — SAMPLE VEHICLES</span>
           <span>DETAILS AND PRICES ARE FOR DESIGN DEMONSTRATION ONLY</span>
         </div>
+
+        <section className="vehicle-bubble-section" aria-label="Explore the vehicle collection">
+          <div className="bubble-heading">
+            <div>
+              <div className="micro-label">THE PRESTIGE EDIT</div>
+              <h3>Keep your eyes <em>moving.</em></h3>
+            </div>
+            <span>SELECT A VEHICLE TO EXPLORE</span>
+          </div>
+          <div className="vehicle-bubble-viewport">
+            <div className="vehicle-bubble-track">
+              {[...vehicles, ...vehicles].map((car, index) => {
+                const duplicate = index >= vehicles.length;
+                return (
+                  <button
+                    className="vehicle-bubble"
+                    key={`${car.id}-bubble-${index}`}
+                    type="button"
+                    onClick={() => setSelected(car)}
+                    tabIndex={duplicate ? -1 : 0}
+                    aria-hidden={duplicate}
+                    aria-label={`Explore ${car.year} ${car.make} ${car.model}`}
+                  >
+                    <span className="vehicle-bubble-image">
+                      <img src={car.image} alt="" loading="lazy" />
+                      <span className="vehicle-bubble-arrow"><ArrowUpRight size={17} /></span>
+                    </span>
+                    <span className="vehicle-bubble-copy">
+                      <span>{car.make} · {car.year}</span>
+                      <strong>{car.model}</strong>
+                      <span className="vehicle-bubble-price">{money(car.price)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="bubble-disclaimer">Sample vehicle cards for design demonstration. Availability and prices must be verified.</p>
+        </section>
       </section>
 
       <section className="quote-search-section" id="find-a-car">
