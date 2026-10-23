@@ -1359,3 +1359,24 @@ button {
 .brand-dropdown a span { color: #9b9c98; font-size: 10px; }
 .vehicle-bubble-section { margin: 12px 0 38px !important; padding-top: 38px !important; }
 @media (max-width: 700px) { .brand-dropdown { width: 225px; } }
+
+
+/* Keep the main Prestige navigation visible while the visitor scrolls */
+.site-nav {
+  position: fixed;
+  top: 29px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: rgba(8, 9, 10, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+.site-nav .brand-dropdown { z-index: 50; }
+@media (max-width: 760px) {
+  .site-nav {
+    top: 29px;
+    padding-inline: 5%;
+  }
+}
