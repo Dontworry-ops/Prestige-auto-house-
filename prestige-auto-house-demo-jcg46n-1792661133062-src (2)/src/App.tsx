@@ -119,6 +119,146 @@ const vehicles: Car[] = [
 ];
 const money = (value: number) => 'R ' + value.toLocaleString('en-ZA');
 
+
+function PrestigeThreeDMonogram() {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const [fallback, setFallback] = useState(false);
+
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setFallback(true);
+      return;
+    }
+
+    let renderer: THREE.WebGLRenderer | undefined;
+    let frame = 0;
+    let disposed = false;
+    const geometries: THREE.BufferGeometry[] = [];
+    const materials: THREE.Material[] = [];
+    try {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+      camera.position.set(0, 0, 10);
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.6;
+      container.appendChild(renderer.domElement);
+      renderer.domElement.setAttribute('aria-hidden', 'true');
+
+      const metal = new THREE.MeshStandardMaterial({
+        color: 0xd8c79e,
+        metalness: 0.93,
+        roughness: 0.21,
+        side: THREE.DoubleSide,
+      });
+      const shadow = new THREE.MeshStandardMaterial({
+        color: 0x24231f,
+        metalness: 0.84,
+        roughness: 0.31,
+      });
+      materials.push(metal, shadow);
+      const emblem = new THREE.Group();
+      scene.add(emblem);
+
+      // Open monogram in true 3D: brushed gold sculpted P floating in a metal halo.
+      const letterShape = new THREE.Shape();
+      letterShape.moveTo(-0.88, -1.15);
+      letterShape.lineTo(-0.88, 1.17);
+      letterShape.lineTo(0.13, 1.17);
+      letterShape.bezierCurveTo(1.14, 1.17, 1.22, 0.73, 1.22, 0.27);
+      letterShape.bezierCurveTo(1.22, -0.27, 0.88, -0.59, 0.11, -0.59);
+      letterShape.lineTo(-0.31, -0.59);
+      letterShape.lineTo(-0.31, -1.15);
+      letterShape.lineTo(-0.88, -1.15);
+      const hole = new THREE.Path();
+      hole.moveTo(-0.31, 0.12);
+      hole.lineTo(-0.31, 0.65);
+      hole.lineTo(0.1, 0.65);
+      hole.bezierCurveTo(0.49, 0.65, 0.57, 0.55, 0.57, 0.30);
+      hole.bezierCurveTo(0.57, 0.09, 0.43, 0.12, 0.1, 0.12);
+      hole.lineTo(-0.31, 0.12);
+      letterShape.holes.push(hole);
+      const letterGeo = new THREE.ExtrudeGeometry(letterShape, {
+        depth: 0.23,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        steps: 1,
+        bevelSize: 0.035,
+        bevelThickness: 0.035,
+        curveSegments: 18,
+      });
+      geometries.push(letterGeo);
+      const letter = new THREE.Mesh(letterGeo, metal);
+      letter.position.z = -0.11;
+      emblem.add(letter);
+
+      const haloGeo = new THREE.TorusGeometry(1.78, 0.027, 10, 140);
+      const innerGeo = new THREE.TorusGeometry(1.66, 0.008, 8, 140);
+      geometries.push(haloGeo, innerGeo);
+      emblem.add(new THREE.Mesh(haloGeo, metal));
+      const innerRing = new THREE.Mesh(innerGeo, shadow);
+      innerRing.position.z = -0.10;
+      emblem.add(innerRing);
+
+      const keyLight = new THREE.PointLight(0xffedcf, 55, 16);
+      keyLight.position.set(-3, 4, 5);
+      scene.add(keyLight);
+      const rimLight = new THREE.PointLight(0xd0b17a, 35, 16);
+      rimLight.position.set(4, -1, -1);
+      scene.add(rimLight);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+
+      const resize = () => {
+        if (!renderer || disposed) return;
+        const size = Math.max(220, container.clientWidth);
+        renderer.setSize(size, size, false);
+        camera.aspect = 1;
+        camera.updateProjectionMatrix();
+      };
+      resize();
+      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize);
+      observer?.observe(container);
+      const start = performance.now();
+      const animate = (now: number) => {
+        if (disposed || !renderer) return;
+        const t = Math.min(1, (now - start) / 1700);
+        const ease = 1 - Math.pow(1 - t, 4);
+        emblem.position.y = 3.3 * (1 - ease) + Math.sin(now * 0.0016) * 0.035;
+        emblem.rotation.y = -1.15 * (1 - ease) + Math.sin(now * 0.0009) * 0.10;
+        emblem.rotation.x = 0.28 * (1 - ease) - 0.055;
+        emblem.rotation.z = -0.22 * (1 - ease);
+        const s = 0.78 + 0.22 * ease;
+        emblem.scale.setScalar(s);
+        renderer.render(scene, camera);
+        frame = window.requestAnimationFrame(animate);
+      };
+      frame = window.requestAnimationFrame(animate);
+      return () => {
+        disposed = true;
+        window.cancelAnimationFrame(frame);
+        observer?.disconnect();
+        geometries.forEach(geometry => geometry.dispose());
+        materials.forEach(material => material.dispose());
+        renderer?.dispose();
+        renderer?.domElement.remove();
+      };
+    } catch {
+      renderer?.dispose();
+      renderer?.domElement.remove();
+      setFallback(true);
+    }
+  }, []);
+
+  return (
+    <div className="intro-3d-stage" ref={mountRef}>
+      {fallback && <span className="intro-3d-fallback" aria-hidden="true">P<span>.</span></span>}
+    </div>
+  );
+}
+
 function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -177,7 +317,7 @@ function App() {
   const [visibleCards, setVisibleCards] = useState<number[]>([]);
 
   useEffect(() => {
-    const introTimer = window.setTimeout(() => setIntroComplete(true), 2600);
+    const introTimer = window.setTimeout(() => setIntroComplete(true), 3300);
     return () => window.clearTimeout(introTimer);
   }, []);
 
@@ -270,6 +410,7 @@ function App() {
     <main className="site-shell">
       {!introComplete && (
         <div className="brand-drop-intro" aria-hidden="true">
+          <PrestigeThreeDMonogram />
           <div className="intro-wordmark">PRESTIGE<span>.</span></div>
           <div className="intro-submark">AUTO HOUSE</div>
           <div className="intro-rule" />
