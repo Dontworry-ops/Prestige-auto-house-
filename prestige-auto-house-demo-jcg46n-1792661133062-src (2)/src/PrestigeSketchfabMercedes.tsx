@@ -217,12 +217,18 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                   camera.position[1] - camera.target[1],
                   camera.position[2] - camera.target[2]
                 ));
+                // Store the original fitted distance, not the wide shot's
+                // distance. Otherwise each scroll update zooms out a second time.
                 cameraRef.current = {
-                  position: [camera.target[0] + base * .18, camera.target[1] - base * .22, camera.target[2] + base * 2.45],
-                  target: camera.target,
+                  position: [...camera.position],
+                  target: [...camera.target],
                 };
                 api.setFov(46);
-                api.setCameraLookAt(cameraRef.current.position, cameraRef.current.target, .15);
+                api.setCameraLookAt(
+                  [camera.target[0] + base * .18, camera.target[1] - base * .22, camera.target[2] + base * 2.45],
+                  camera.target,
+                  .15
+                );
               });
             });
             api.getNodeMap((err, values) => {
