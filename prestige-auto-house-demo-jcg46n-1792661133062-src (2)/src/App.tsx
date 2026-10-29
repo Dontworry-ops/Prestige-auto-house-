@@ -16,7 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import PrestigeIntro3D from './PrestigeIntro3D';
-import PrestigeCarScene from './PrestigeCarScene';
+import PrestigeDesertDriftScene from './PrestigeDesertDriftScene';
 
 type Car = {
   id: number;
@@ -366,14 +366,32 @@ function App() {
       </section>
 
       <section className="drift-story" id="experience" ref={driftRef}>
-        <div className={carMode === '3d' ? 'drift-sticky is-3d-mode' : 'drift-sticky is-film-mode'} style={driftStyle}>
+        <div className={carMode === '3d' ? 'drift-sticky is-3d-mode is-desert-3d' : 'drift-sticky is-film-mode'} style={driftStyle}>
           {carMode === '3d' ? (
-            <PrestigeCarScene scrollProgress={scrollProgress} onFailure={handleCar3DFailure} />
+            <>
+              <PrestigeDesertDriftScene scrollProgress={scrollProgress} onFailure={handleCar3DFailure} />
+              <div className="prestige-desert-stage" aria-hidden="true">
+                {scrollProgress < .59 ? '01 / THE CIRCLE' : scrollProgress < .86 ? '02 / THE ESCAPE' : '03 / THE REVEAL'}
+              </div>
+              <div
+                className="prestige-desert-smoke-veil"
+                aria-hidden="true"
+                style={{
+                  opacity: Math.min(1, Math.max(0, (scrollProgress - .76) / .23)),
+                  transform: `scale(${1 + Math.min(1, Math.max(0, (scrollProgress - .76) / .23)) * .15})`,
+                }}
+              />
+              <div
+                className="prestige-desert-final-title"
+                aria-hidden="true"
+                style={{ opacity: Math.min(1, Math.max(0, (scrollProgress - .89) / .09)) }}
+              >THE COLLECTION AWAITS</div>
+            </>
           ) : (
             <MercedesDriftScene scrollProgress={scrollProgress} />
           )}
           <div className="drift-copy">
-            <span className="micro-label">{carMode === '3d' ? 'THE PRESTIGE 3D EXPERIENCE' : 'THE CINEMATIC FILM'}</span>
+            <span className="micro-label">{carMode === '3d' ? 'MERCEDES-AMG GT3 · SUNSET DESERT' : 'THE CINEMATIC FILM'}</span>
             <h2>
               Built to <em>stand apart.</em>
             </h2>
@@ -384,7 +402,7 @@ function App() {
               className={carMode === '3d' ? 'active' : ''}
               aria-pressed={carMode === '3d'}
               onClick={() => setCarMode('3d')}
-            >3D EXPERIENCE</button>
+            >3D DRIFT</button>
             <button
               type="button"
               className={carMode === 'film' ? 'active' : ''}
