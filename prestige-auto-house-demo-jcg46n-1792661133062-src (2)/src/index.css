@@ -2909,3 +2909,73 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion:reduce) {
   .prestige-desert-smoke-veil { transition: none !important; }
 }
+
+
+/* First-party Prestige styling around the original Mercedes-AMG GT3 Sketchfab viewer */
+.prestige-desert-sketchfab {
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 70% 18%, rgba(255,211,149,.5) 0%, transparent 47%),
+    linear-gradient(180deg,#a56f50 0%,#79503e 47%,#3f352e 100%);
+}
+.prestige-desert-remote-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 67% 28%, rgba(253,210,145,.38), transparent 53%),
+    repeating-linear-gradient(170deg,transparent 0px,transparent 60px,rgba(255,227,187,.027) 62px,transparent 66px);
+}
+.prestige-desert-sketchfab-frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  z-index: 1;
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 1;
+  filter: saturate(.87) contrast(1.05) sepia(.09);
+}
+.prestige-desert-tire-smoke {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: block;
+  pointer-events: none;
+  opacity: .9;
+  mix-blend-mode: screen;
+}
+.is-desert-3d .prestige-desert-asset-credit {
+  z-index: 12;
+  left: auto;
+  right: clamp(18px,6vw,100px);
+  bottom: clamp(32px,6vh,75px);
+  max-width: min(380px,40%);
+  text-align: right;
+  font-size: 8px;
+  letter-spacing: .035em;
+  color: rgba(249,237,217,.89);
+  text-shadow: 0 2px 7px #1d0e09;
+}
+.is-desert-3d .prestige-desert-asset-credit a {
+  color: #ffdb9b;
+}
+@media(max-width:700px) {
+  .prestige-desert-sketchfab-frame {
+    filter: saturate(.91) contrast(1.06) sepia(.07);
+  }
+  .is-desert-3d .prestige-desert-asset-credit {
+    left: 6%;
+    right: 6%;
+    max-width: none;
+    bottom: 25px;
+    text-align: center;
+    font-size: 7px;
+  }
+}
