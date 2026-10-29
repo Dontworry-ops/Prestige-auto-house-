@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import PrestigeSketchfabMercedes from './PrestigeSketchfabMercedes';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 /**
@@ -138,10 +139,25 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
   const failRef = useRef(onFailure);
   const loadedRef = useRef(onLoaded);
   const [near, setNear] = useState(false);
+  const [assetSource, setAssetSource] = useState<'checking' | 'local' | 'sketchfab'>('checking');
   const [loadState, setLoadState] = useState<LoadState>('waiting');
   const [percent, setPercent] = useState(0);
 
   useEffect(() => { progressRef.current = scrollProgress; }, [scrollProgress]);
+
+  // Use the owner's original CC BY GLB parts when hosted. Otherwise load the
+  // EXACT SAME car through its original Sketchfab source (no replacement car).
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch(MODEL_PARTS[0], { method: 'HEAD', signal: ctrl.signal })
+      .then(res => {
+        if (ctrl.signal.aborted) return;
+        const type = res.headers.get('content-type') || '';
+        setAssetSource(res.ok && !type.includes('text/html') ? 'local' : 'sketchfab');
+      })
+      .catch(() => { if (!ctrl.signal.aborted) setAssetSource('sketchfab'); });
+    return () => ctrl.abort();
+  }, []);
   useEffect(() => { failRef.current = onFailure; loadedRef.current = onLoaded; }, [onFailure, onLoaded]);
 
   useEffect(() => {
@@ -156,7 +172,7 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
 
   useEffect(() => {
     const mount = mountRef.current;
-    if (!near || !mount) return;
+    if (!near || !mount || assetSource !== 'local') return;
 
     let renderer: THREE.WebGLRenderer | null = null;
     let camera: THREE.PerspectiveCamera;
@@ -312,7 +328,7 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
           if (!active || controller.signal.aborted) return;
           console.warn('Original Mercedes 3D asset is not available:', error);
           setLoadState('unavailable');
-          failRef.current();
+          setAssetSource('sketchfab');
         });
 
       const motionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -365,7 +381,7 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
     } catch (error) {
       console.warn('Prestige sunset desert 3D unavailable', error);
       setLoadState('unavailable');
-      failRef.current();
+      setAssetSource('sketchfab');
     }
 
     return () => {
@@ -397,7 +413,11 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
       renderer?.dispose();
       renderer?.domElement.remove();
     };
-  }, [near]);
+  }, [near, assetSource]);
+
+  if (assetSource === 'sketchfab') {
+    return <PrestigeSketchfabMercedes scrollProgress={scrollProgress} onFailure={onFailure} onLoaded={onLoaded} />;
+  }
 
   return (
     <div className="prestige-desert-scene">
