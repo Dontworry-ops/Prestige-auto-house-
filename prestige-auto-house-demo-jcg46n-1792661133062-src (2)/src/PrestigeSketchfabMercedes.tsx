@@ -135,8 +135,8 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     let ready = false;
     const timeout = window.setTimeout(() => {
       if (!ready && !cancelled) {
+        // Keep the original 3D model visible; never silently swap to an unrelated BMW film.
         setState('error');
-        failureRef.current();
       }
     }, 26000);
 
@@ -234,7 +234,6 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
           if (cancelled) return;
           window.clearTimeout(timeout);
           setState('error');
-          failureRef.current();
         },
       });
     }).catch(error => {
@@ -242,7 +241,6 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       console.warn('Original Mercedes Sketchfab 3D viewer unavailable', error);
       window.clearTimeout(timeout);
       setState('error');
-      failureRef.current();
     });
 
     return () => {
@@ -263,6 +261,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       <iframe
         ref={iframeRef}
         className="prestige-desert-sketchfab-frame"
+        src="https://sketchfab.com/models/39e77243109f4e5cb7134b6f31c8f619/embed?autostart=1&camera=0&scrollwheel=0&ui_stop=0&dnt=1"
         title="Original Mercedes-AMG GT3 Evo 3D car model by vecarz"
         allow="autoplay; fullscreen; xr-spatial-tracking"
         allowFullScreen
@@ -270,6 +269,12 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
         referrerPolicy="strict-origin-when-cross-origin"
       />
       <canvas className="prestige-desert-tire-smoke" ref={dustRef} aria-hidden="true" />
+      {state === 'error' && (
+        <div className="prestige-desert-viewer-note" role="status">
+          The original Mercedes model viewer could not start its animation on this browser.
+          <span>Use WATCH FILM above, or <a href="https://sketchfab.com/3d-models/mercedes-amg-gt3-evo-2020-wwwvecarzcom-39e77243109f4e5cb7134b6f31c8f619" target="_blank" rel="noopener noreferrer">view the original 3D model</a>.</span>
+        </div>
+      )}
       {state === 'loading' && (
         <div className="prestige-desert-loading" role="status">
           <span className="prestige-desert-loading-mark">P.</span>
