@@ -258,9 +258,15 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   return (
     <div className="prestige-desert-scene prestige-desert-sketchfab">
       <div className="prestige-desert-remote-background" aria-hidden="true" />
+      <div
+        className="prestige-desert-original-preview"
+        role="img"
+        aria-label="Official preview of the original Mercedes-AMG GT3 Evo 3D car"
+        style={{ backgroundImage: "linear-gradient(180deg, rgba(10,9,8,.04), rgba(10,9,8,.52)), url('https://media.sketchfab.com/models/39e77243109f4e5cb7134b6f31c8f619/thumbnails/cfd08577556742aa90fe0ecd46bb9152/98d37ec379194272ba0b95b307206db4.jpeg')" }}
+      />
       <iframe
         ref={iframeRef}
-        className="prestige-desert-sketchfab-frame"
+        className={state === 'error' ? 'prestige-desert-sketchfab-frame viewer-unavailable' : 'prestige-desert-sketchfab-frame'}
         src="https://sketchfab.com/models/39e77243109f4e5cb7134b6f31c8f619/embed?autostart=1&camera=0&scrollwheel=0&ui_stop=0&dnt=1"
         title="Original Mercedes-AMG GT3 Evo 3D car model by vecarz"
         allow="autoplay; fullscreen; xr-spatial-tracking"
@@ -271,8 +277,8 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       <canvas className="prestige-desert-tire-smoke" ref={dustRef} aria-hidden="true" />
       {state === 'error' && (
         <div className="prestige-desert-viewer-note" role="status">
-          The original Mercedes model viewer could not start its animation on this browser.
-          <span>Use WATCH FILM above, or <a href="https://sketchfab.com/3d-models/mercedes-amg-gt3-evo-2020-wwwvecarzcom-39e77243109f4e5cb7134b6f31c8f619" target="_blank" rel="noopener noreferrer">view the original 3D model</a>.</span>
+          Your original Mercedes-AMG GT3 is here, but this browser could not start the 3D viewer.
+          <span><a href="https://sketchfab.com/3d-models/mercedes-amg-gt3-evo-2020-wwwvecarzcom-39e77243109f4e5cb7134b6f31c8f619" target="_blank" rel="noopener noreferrer">View the original model in 3D</a>, or choose WATCH FILM above.</span>
         </div>
       )}
       {state === 'loading' && (
