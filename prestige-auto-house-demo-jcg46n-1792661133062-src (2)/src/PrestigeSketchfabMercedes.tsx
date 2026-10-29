@@ -24,6 +24,8 @@ type ViewerApi = {
   rotate: (id: number, angleAndAxis: number[], options: { duration: number }) => void;
   setBackground: (options: { color: number[] }) => void;
   setUserInteraction?: (enabled: boolean) => void;
+  recenterCamera: (cb?: (error: unknown) => void) => void;
+  setFov: (degrees: number) => void;
 };
 type SketchfabConstructor = new (version: string, iframe: HTMLIFrameElement) => {
   init: (uid: string, config: Record<string, unknown>) => void;
@@ -67,7 +69,8 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   const nodeIdRef = useRef<number | null>(null);
   const originalPositionRef = useRef<number[] | null>(null);
   const lastSentRef = useRef(0);
-  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const lastProgressSentRef = useRef(-100);
+  const [state, setState] = useState<'loading' | 'ready' | 'slow' | 'error'>('loading');
 
   useEffect(() => { progressRef.current = scrollProgress; }, [scrollProgress]);
   useEffect(() => { failureRef.current = onFailure; loadedRef.current = onLoaded; }, [onFailure, onLoaded]);
@@ -129,21 +132,20 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   useEffect(() => {
     let cancelled = false;
     let raf = 0;
-    let tickHandle = 0;
     const iframe = iframeRef.current;
     if (!iframe) return;
     let ready = false;
+    // A slow third-party model download is not an error; keep it loading.
     const timeout = window.setTimeout(() => {
-      if (!ready && !cancelled) {
-        // Keep the original 3D model visible; never silently swap to an unrelated BMW film.
-        setState('error');
-      }
-    }, 26000);
+      if (!ready && !cancelled) setState('slow');
+    }, 14500);
 
     const tick = () => {
       if (cancelled || !ready || !viewerRef.current) return;
       const now = performance.now();
-      if (now - lastSentRef.current >= 95 && !document.hidden) {
+      const progressChanged = Math.abs(progressRef.current - lastProgressSentRef.current) > .003;
+      if (progressChanged && now - lastSentRef.current >= 125 && !document.hidden) {
+        lastProgressSentRef.current = progressRef.current;
         lastSentRef.current = now;
         const api = viewerRef.current;
         const p = progressRef.current;
@@ -155,26 +157,26 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
           const dy = camera.position[1] - t[1];
           const dz = camera.position[2] - t[2];
           const distance = Math.max(2, Math.hypot(dx,dy,dz));
-          const radius = Math.min(2.25, Math.max(.45, distance * .15));
+          const radius = Math.min(2.25, Math.max(.25, distance * .12));
           const id = nodeIdRef.current;
           const original = originalPositionRef.current;
           if (id !== null && original) {
             api.translate(id, [original[0] + c.x * radius, original[1] + c.y * radius, original[2]], { duration: 0 });
             api.rotate(id, [c.yaw, 0, 0, 1], { duration: 0 });
-            // Overhead camera tracks the centre of the 3D drift.
+            // Leave room for the ENTIRE car: no more close-up of just the roof.
             const follow = clamp((p - .59) / .27);
+            const target = [t[0], t[1] - follow * radius * .7, t[2]];
             api.setCameraLookAt(
-              [t[0] + distance * .05, t[1] - distance * .20 - follow * radius, t[2] + distance * 1.13],
-              [t[0], t[1] - follow * radius * .8, t[2]],
-              0.12
+              [target[0] + distance * .18, target[1] - distance * .22, target[2] + distance * 2.45],
+              target,
+              0.15
             );
           } else {
-            // Even if the uploader's scene has no editable root transform,
-            // preserve a real overhead orbit of the exact original 3D car.
-            const orbit = -Math.PI / 2 + p / .59 * Math.PI * 2;
+            // Non-editable Sketchfab scene: orbit a wide overhead camera.
+            const orbit = -Math.PI / 2 + clamp(p / .59) * Math.PI * 2;
             api.setCameraLookAt(
-              [t[0] + Math.cos(orbit) * distance * .3, t[1] + Math.sin(orbit) * distance * .3, t[2] + distance * 1.1],
-              t, .12
+              [t[0] + Math.cos(orbit) * distance * .56, t[1] + Math.sin(orbit) * distance * .56, t[2] + distance * 2.45],
+              t, .14
             );
           }
         }
@@ -195,7 +197,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
         ui_stop: 0,
         dnt: 1,
         preload: 0,
-        max_texture_size: window.innerWidth < 720 ? 1024 : 2048,
+        max_texture_size: window.innerWidth < 720 ? 512 : 1024,
         success: (api: ViewerApi) => {
           if (cancelled) return;
           viewerRef.current = api;
@@ -205,8 +207,23 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
             window.clearTimeout(timeout);
             api.setBackground({ color: [0.54, .34, .25] });
             api.setUserInteraction?.(false);
-            api.getCameraLookAt((err, camera) => {
-              if (!err && camera?.position && camera?.target) cameraRef.current = camera;
+            // Fit the entire model before switching to the wide overhead shot.
+            api.recenterCamera(() => {
+              if (cancelled) return;
+              api.getCameraLookAt((err, camera) => {
+                if (err || !camera?.position || !camera?.target) return;
+                const base = Math.max(.9, Math.hypot(
+                  camera.position[0] - camera.target[0],
+                  camera.position[1] - camera.target[1],
+                  camera.position[2] - camera.target[2]
+                ));
+                cameraRef.current = {
+                  position: [camera.target[0] + base * .18, camera.target[1] - base * .22, camera.target[2] + base * 2.45],
+                  target: camera.target,
+                };
+                api.setFov(46);
+                api.setCameraLookAt(cameraRef.current.position, cameraRef.current.target, .15);
+              });
             });
             api.getNodeMap((err, values) => {
               if (err || !values) return;
@@ -246,12 +263,11 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     return () => {
       cancelled = true;
       window.clearTimeout(timeout);
-      window.clearTimeout(tickHandle);
       window.cancelAnimationFrame(raf);
       viewerRef.current?.stop?.();
       viewerRef.current = null;
       cameraRef.current = null;
-      iframe.src = 'about:blank';
+      // React removes the iframe; forcing about:blank caused extra navigation.
     };
   }, []);
 
@@ -267,11 +283,9 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       <iframe
         ref={iframeRef}
         className={state === 'error' ? 'prestige-desert-sketchfab-frame viewer-unavailable' : 'prestige-desert-sketchfab-frame'}
-        src="https://sketchfab.com/models/39e77243109f4e5cb7134b6f31c8f619/embed?autostart=1&camera=0&scrollwheel=0&ui_stop=0&dnt=1"
         title="Original Mercedes-AMG GT3 Evo 3D car model by vecarz"
         allow="autoplay; fullscreen; xr-spatial-tracking"
         allowFullScreen
-        loading="lazy"
         referrerPolicy="strict-origin-when-cross-origin"
       />
       <canvas className="prestige-desert-tire-smoke" ref={dustRef} aria-hidden="true" />
@@ -281,11 +295,12 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
           <span><a href="https://sketchfab.com/3d-models/mercedes-amg-gt3-evo-2020-wwwvecarzcom-39e77243109f4e5cb7134b6f31c8f619" target="_blank" rel="noopener noreferrer">View the original model in 3D</a>, or choose WATCH FILM above.</span>
         </div>
       )}
-      {state === 'loading' && (
+      {(state === 'loading' || state === 'slow') && (
         <div className="prestige-desert-loading" role="status">
           <span className="prestige-desert-loading-mark">P.</span>
-          <strong>LOADING YOUR ORIGINAL MERCEDES-AMG GT3</strong>
-          <span className="prestige-desert-loading-line"><i style={{ width: '55%' }} /></span>
+          <strong>{state === 'slow' ? 'THE 3D MODEL IS STILL LOADING' : 'PREPARING YOUR ORIGINAL MERCEDES-AMG GT3'}</strong>
+          <small>{state === 'slow' ? 'This full-detail model is large. WATCH FILM is available while it loads.' : 'Preparing geometry and textures…'}</small>
+          <span className="prestige-desert-loading-line"><i /></span>
         </div>
       )}
       <span className="prestige-desert-asset-credit">
