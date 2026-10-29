@@ -2482,3 +2482,225 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion:reduce) {
   .brand-drop-intro.prestige-intro-3d { display:none !important; }
 }
+
+
+/* PRESTIGE LIVE 3D CAR — a real GLB studio, with cinematic video fallback */
+.drift-sticky.is-3d-mode {
+  isolation: isolate;
+  background: #050708 !important;
+}
+.drift-sticky.is-3d-mode::before {
+  z-index: 3;
+  background: linear-gradient(90deg, rgba(5,7,8,.46), rgba(5,7,8,.03) 49%, rgba(5,7,8,.13)) !important;
+  pointer-events: none;
+}
+.drift-sticky.is-3d-mode::after {
+  z-index: 3;
+  background: linear-gradient(0deg, rgba(4,5,7,.68), transparent 29%, rgba(4,5,7,.22) 100%);
+  pointer-events: none;
+}
+.prestige-car-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 55% 38% at 49% 42%, rgba(132,117,90,.18) 0%, transparent 74%),
+    radial-gradient(ellipse 62% 40% at 70% 60%, rgba(55,73,91,.21), transparent 74%),
+    linear-gradient(180deg, #06090b 0%, #0b0d0e 49%, #040505 100%);
+}
+.prestige-car-studio-glow {
+  position: absolute;
+  inset: -25%;
+  z-index: 0;
+  background: radial-gradient(ellipse at 44% 52%, rgba(233,197,133,.12), transparent 35%);
+  pointer-events: none;
+}
+.prestige-car-canvas-mount {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.prestige-car-canvas-mount:active { cursor: grabbing; }
+.prestige-car-webgl {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+  outline: 0;
+}
+.prestige-car-loading {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 19px;
+  color: #e8dec7;
+  font: 600 9px/1.3 'DM Sans', sans-serif;
+  letter-spacing: .22em;
+  text-align: center;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(50,45,35,.12), rgba(4,5,6,.84) 75%);
+}
+.prestige-car-loading-icon {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  font: 300 49px/1 Manrope,sans-serif;
+  letter-spacing: -.12em;
+  color: #ddc99e;
+  border: 1px solid rgba(211,193,154,.48);
+  box-shadow: 0 0 65px rgba(212,183,122,.11), inset 0 0 25px rgba(212,183,122,.05);
+  animation: prestige3DLoaderPulse 2.4s ease-in-out infinite;
+}
+.prestige-car-loading-bar {
+  width: min(185px,50vw);
+  height: 1px;
+  background: rgba(211,193,154,.22);
+  overflow: hidden;
+}
+.prestige-car-loading-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg,#876e46,#e6d0a5);
+  transition: width .23s ease;
+}
+@keyframes prestige3DLoaderPulse {
+  50% { box-shadow: 0 0 90px rgba(212,183,122,.2), inset 0 0 35px rgba(212,183,122,.08); }
+}
+.prestige-car-concept-note {
+  position: absolute;
+  right: clamp(20px,7vw,100px);
+  top: clamp(90px,16vh,160px);
+  z-index: 5;
+  font: 600 8px/1.4 'DM Sans', sans-serif;
+  letter-spacing: .22em;
+  color: rgba(236,220,188,.67);
+  text-align: right;
+  pointer-events: none;
+}
+.prestige-car-hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(24px,6vh,64px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  white-space: nowrap;
+  font: 600 8px/1.2 'DM Sans',sans-serif;
+  letter-spacing: .24em;
+  color: rgba(228,215,185,.73);
+  pointer-events: none;
+  animation: prestige3DFadeUp .8s ease both;
+}
+.prestige-car-hint-line {
+  height: 1px;
+  width: 29px;
+  background: #cfb98d;
+}
+.prestige-car-hint-dot { color: #d6bb87; font-size: 14px; }
+.prestige-car-view-switch {
+  position: absolute;
+  z-index: 10;
+  top: clamp(90px,16vh,155px);
+  left: clamp(20px,7vw,110px);
+  display: inline-flex;
+  align-items: stretch;
+  padding: 4px;
+  gap: 0;
+  border: 1px solid rgba(218,201,164,.33);
+  background: rgba(3,5,6,.67);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.prestige-car-view-switch button {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: #c3b9a5;
+  padding: 13px 16px;
+  min-height: 41px;
+  font: 600 9px/1.2 'DM Sans',sans-serif;
+  letter-spacing: .13em;
+  transition: background .2s,color .2s;
+}
+.prestige-car-view-switch button:hover { color: #fff4dc; }
+.prestige-car-view-switch button.active {
+  background: #d3c19a;
+  color: #13130f;
+}
+.prestige-car-scroll-progress {
+  position: absolute;
+  z-index: 9;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(211,193,154,.13);
+  pointer-events: none;
+}
+.prestige-car-scroll-progress span {
+  display: block;
+  height: 100%;
+  background: #d6bf8d;
+  transition: width .1s linear;
+}
+.drift-sticky.is-3d-mode .drift-copy {
+  z-index: 6;
+  text-shadow: 0 6px 35px rgba(0,0,0,.7);
+}
+.drift-sticky.is-3d-mode .drift-copy h2 {
+  max-width: 650px;
+}
+.drift-sticky.is-3d-mode .drift-copy .micro-label {
+  color: #d6bf8d;
+}
+@media (max-width:700px) {
+  .prestige-car-view-switch {
+    top: 113px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .prestige-car-view-switch button {
+    font-size: 8px;
+    white-space: nowrap;
+    padding: 12px 13px;
+  }
+  .prestige-car-concept-note {
+    top: auto;
+    bottom: 115px;
+    right: 6%;
+    left: 6%;
+    text-align: center;
+    font-size: 7px;
+    letter-spacing: .12em;
+  }
+  .prestige-car-hint {
+    bottom: 79px;
+    font-size: 7px;
+    letter-spacing: .08em;
+    gap: 8px;
+  }
+  .prestige-car-hint-line { width: 18px; }
+  .drift-sticky.is-3d-mode .drift-copy {
+    bottom: clamp(150px,22vh,210px) !important;
+  }
+  .drift-sticky.is-3d-mode .drift-copy h2 {
+    font-size: clamp(35px,9vw,52px) !important;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .prestige-car-loading-icon { animation: none !important; }
+}
