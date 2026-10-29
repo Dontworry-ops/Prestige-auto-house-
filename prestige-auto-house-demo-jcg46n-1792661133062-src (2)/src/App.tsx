@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowDown,
   ArrowDownRight,
@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import PrestigeIntro3D from './PrestigeIntro3D';
+import PrestigeCarScene from './PrestigeCarScene';
 
 type Car = {
   id: number;
@@ -157,6 +158,8 @@ function App() {
   const [brandMenuOpen, setBrandMenuOpen] = useState(false);
   const [introComplete, setIntroComplete] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [carMode, setCarMode] = useState<'3d' | 'film'>('3d');
+  const handleCar3DFailure = useCallback(() => setCarMode('film'), []);
   const [quoteSent, setQuoteSent] = useState(false);
   const [quote, setQuote] = useState({ name: '', email: '', phone: '', desiredCar: '', budget: 'Flexible', notes: '' });
   const [search, setSearch] = useState('');
@@ -363,13 +366,34 @@ function App() {
       </section>
 
       <section className="drift-story" id="experience" ref={driftRef}>
-        <div className="drift-sticky" style={driftStyle}>
-          <MercedesDriftScene scrollProgress={scrollProgress} />
+        <div className={carMode === '3d' ? 'drift-sticky is-3d-mode' : 'drift-sticky is-film-mode'} style={driftStyle}>
+          {carMode === '3d' ? (
+            <PrestigeCarScene scrollProgress={scrollProgress} onFailure={handleCar3DFailure} />
+          ) : (
+            <MercedesDriftScene scrollProgress={scrollProgress} />
+          )}
           <div className="drift-copy">
-            <span className="micro-label">PRESTIGE AUTO HOUSE</span>
+            <span className="micro-label">{carMode === '3d' ? 'THE PRESTIGE 3D EXPERIENCE' : 'THE CINEMATIC FILM'}</span>
             <h2>
               Built to <em>stand apart.</em>
             </h2>
+          </div>
+          <div className="prestige-car-view-switch" role="group" aria-label="Choose 3D or film vehicle experience">
+            <button
+              type="button"
+              className={carMode === '3d' ? 'active' : ''}
+              aria-pressed={carMode === '3d'}
+              onClick={() => setCarMode('3d')}
+            >3D EXPERIENCE</button>
+            <button
+              type="button"
+              className={carMode === 'film' ? 'active' : ''}
+              aria-pressed={carMode === 'film'}
+              onClick={() => setCarMode('film')}
+            >WATCH FILM</button>
+          </div>
+          <div className="prestige-car-scroll-progress" aria-hidden="true">
+            <span style={{ width: `${Math.round(scrollProgress * 100)}%` }} />
           </div>
         </div>
       </section>
