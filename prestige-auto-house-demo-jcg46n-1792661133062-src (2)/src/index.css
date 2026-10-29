@@ -3021,3 +3021,29 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color: #d6bea0;
 }
 .prestige-desert-viewer-note a { color: #ffe1a8; text-decoration: underline; }
+
+
+/* Exact Mercedes preview supplied by the model author's own public asset page. */
+.prestige-desert-original-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: #554034;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 51%;
+  filter: saturate(.75) sepia(.12) contrast(1.04);
+}
+.prestige-desert-sketchfab-frame {
+  z-index: 2;
+  transition: opacity .5s ease;
+}
+.prestige-desert-sketchfab-frame.viewer-unavailable {
+  opacity: 0;
+  visibility: hidden;
+}
+.prestige-desert-sketchfab .prestige-desert-viewer-note {
+  top: auto;
+  bottom: 16%;
+  z-index: 12;
+}
