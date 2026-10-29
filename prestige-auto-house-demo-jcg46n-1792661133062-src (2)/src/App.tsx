@@ -159,7 +159,10 @@ function App() {
   const [introComplete, setIntroComplete] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [carMode, setCarMode] = useState<'3d' | 'film'>('3d');
-  const handleCar3DFailure = useCallback(() => setCarMode('film'), []);
+  const handleCar3DFailure = useCallback(() => {
+    // Never silently swap away from the owner's original Mercedes model.
+    console.warn('The original Mercedes 3D viewer needs a supported WebGL browser.');
+  }, []);
   const [quoteSent, setQuoteSent] = useState(false);
   const [quote, setQuote] = useState({ name: '', email: '', phone: '', desiredCar: '', budget: 'Flexible', notes: '' });
   const [search, setSearch] = useState('');
@@ -367,9 +370,13 @@ function App() {
 
       <section className="drift-story" id="experience" ref={driftRef}>
         <div className={carMode === '3d' ? 'drift-sticky is-3d-mode is-desert-3d' : 'drift-sticky is-film-mode'} style={driftStyle}>
-          {carMode === '3d' ? (
+          {/* Keep the 3D viewer mounted across Film/3D switching: no repeat 55 MB download. */}
+          <div className={carMode === 'film' ? 'prestige-persistent-3d-layer hidden-for-film' : 'prestige-persistent-3d-layer'}
+            aria-hidden={carMode === 'film'}>
+            <PrestigeDesertDriftScene scrollProgress={scrollProgress} onFailure={handleCar3DFailure} />
+          </div>
+          {carMode === '3d' && (
             <>
-              <PrestigeDesertDriftScene scrollProgress={scrollProgress} onFailure={handleCar3DFailure} />
               <div className="prestige-desert-stage" aria-hidden="true">
                 {scrollProgress < .59 ? '01 / THE CIRCLE' : scrollProgress < .86 ? '02 / THE ESCAPE' : '03 / THE REVEAL'}
               </div>
@@ -387,9 +394,8 @@ function App() {
                 style={{ opacity: Math.min(1, Math.max(0, (scrollProgress - .89) / .09)) }}
               >THE COLLECTION AWAITS</div>
             </>
-          ) : (
-            <MercedesDriftScene scrollProgress={scrollProgress} />
           )}
+          {carMode === 'film' && <MercedesDriftScene scrollProgress={scrollProgress} />}
           <div className="drift-copy">
             <span className="micro-label">{carMode === '3d' ? 'MERCEDES-AMG GT3 · SUNSET DESERT' : 'THE CINEMATIC FILM'}</span>
             <h2>
