@@ -2704,3 +2704,208 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion:reduce) {
   .prestige-car-loading-icon { animation: none !important; }
 }
+
+
+/* PRESTIGE 2026 — original user storyboard: sunset, Mercedes GT3 drift, smoke -> inventory */
+.drift-story:has(.is-desert-3d) {
+  height: 300vh;
+  background: #100d0b;
+}
+.drift-sticky.is-desert-3d {
+  isolation: isolate;
+  background: #8c563f !important;
+}
+.drift-sticky.is-desert-3d::before {
+  z-index: 3;
+  background:
+    linear-gradient(90deg, rgba(24,18,15,.61) 0%, rgba(24,18,15,.09) 36%, transparent 63%),
+    linear-gradient(180deg, rgba(16,12,12,.33), transparent 29%, rgba(16,12,12,.43)) !important;
+  pointer-events: none;
+}
+.drift-sticky.is-desert-3d::after {
+  z-index: 3;
+  background: radial-gradient(ellipse at 70% 16%, rgba(250,177,106,.2), transparent 55%) !important;
+  pointer-events: none;
+}
+.prestige-desert-scene {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 80% 18%, rgba(253,199,126,.43), transparent 40%),
+    linear-gradient(180deg, #b9774d, #7e4d36 60%, #43332b);
+}
+.prestige-desert-mount {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.prestige-desert-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.prestige-desert-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 23px;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(181,124,68,.24), transparent 65%),
+    rgba(18,17,16,.92);
+  color: #f3e9d7;
+  font: 600 9px/1.4 'DM Sans',sans-serif;
+  text-align: center;
+  letter-spacing: .23em;
+  pointer-events: none;
+}
+.prestige-desert-loading-mark {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  border: 1px solid #b99c72;
+  border-radius: 50%;
+  color: #e0c395;
+  font: 400 56px/1 Manrope,sans-serif;
+  letter-spacing: -.1em;
+}
+.prestige-desert-loading-line {
+  height: 2px;
+  width: min(220px,60vw);
+  background: rgba(230,203,165,.22);
+  overflow: hidden;
+}
+.prestige-desert-loading-line i {
+  display: block;
+  height: 100%;
+  background: #d6b988;
+  transition: width .2s ease;
+}
+.prestige-desert-asset-credit {
+  position: absolute;
+  z-index: 7;
+  bottom: 24px;
+  left: clamp(20px,7vw,110px);
+  max-width: 50%;
+  font: 500 8px/1.4 'DM Sans',sans-serif;
+  color: #f7e8d1;
+  letter-spacing: .04em;
+  text-shadow: 0 2px 8px #26170d;
+}
+.prestige-desert-asset-credit a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: inherit;
+}
+.prestige-desert-asset-credit a:hover { color: #fff; }
+.prestige-desert-stage {
+  position: absolute;
+  z-index: 6;
+  right: clamp(25px,7vw,110px);
+  top: clamp(105px,17vh,180px);
+  font: 600 9px/1.3 'DM Sans',sans-serif;
+  letter-spacing: .24em;
+  color: #ffe8ca;
+  text-shadow: 0 3px 15px rgba(26,15,10,.6);
+  pointer-events: none;
+}
+.prestige-desert-smoke-veil {
+  position: absolute;
+  z-index: 15;
+  inset: -15%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 75% 75% at 62% 45%, rgba(250,241,223,.98) 10%, rgba(241,228,206,.96) 43%, rgba(205,182,154,.88) 78%, rgba(158,126,97,.72) 100%),
+    #f0e0c7;
+  filter: blur(25px);
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+.prestige-desert-final-title {
+  position: absolute;
+  z-index: 18;
+  left: 50%;
+  top: 48%;
+  width: 90%;
+  transform: translate(-50%, -50%);
+  font: 400 clamp(34px,5vw,74px)/1 Manrope,sans-serif;
+  letter-spacing: -.06em;
+  color: #2b241d;
+  text-align: center;
+  pointer-events: none;
+}
+.drift-sticky.is-desert-3d .drift-copy {
+  z-index: 10;
+  bottom: clamp(75px,12vh,140px) !important;
+}
+.drift-sticky.is-desert-3d .drift-copy h2 {
+  text-shadow: 0 5px 20px rgba(28,15,9,.52);
+  color: #fff1d9;
+}
+.drift-sticky.is-desert-3d .drift-copy h2 em {
+  color: #ffdaa3;
+}
+.drift-sticky.is-desert-3d .drift-copy .micro-label {
+  color: #ffe2ad;
+}
+.drift-sticky.is-desert-3d .prestige-car-view-switch {
+  z-index: 20;
+}
+.drift-sticky.is-desert-3d .prestige-car-view-switch button.active {
+  background: #e5c18a;
+}
+.drift-sticky.is-desert-3d .prestige-car-scroll-progress { z-index: 21; }
+.inventory {
+  position: relative;
+  isolation: isolate;
+}
+.inventory::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 210px;
+  background: linear-gradient(180deg, rgba(240,223,194,.20), rgba(130,101,77,.08) 31%, transparent 100%);
+  pointer-events: none;
+}
+.inventory > * { position: relative; z-index: 1; }
+@media (max-width: 700px) {
+  .drift-story:has(.is-desert-3d) { height: 270vh; }
+  .prestige-desert-stage {
+    top: 174px;
+    right: 6%;
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+  .prestige-desert-asset-credit {
+    left: 6%;
+    right: 6%;
+    bottom: 22px;
+    max-width: none;
+    text-align: center;
+    font-size: 7px;
+    line-height: 1.65;
+  }
+  .drift-sticky.is-desert-3d .drift-copy {
+    bottom: 140px !important;
+    left: 6% !important;
+    right: 6% !important;
+  }
+  .drift-sticky.is-desert-3d .drift-copy h2 {
+    font-size: clamp(33px,9vw,50px) !important;
+  }
+  .prestige-desert-final-title { font-size: 40px; }
+  .prestige-desert-loading-mark { width: 92px; height: 92px; font-size: 42px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .prestige-desert-smoke-veil { transition: none !important; }
+}
