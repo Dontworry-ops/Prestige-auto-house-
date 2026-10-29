@@ -2979,3 +2979,45 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     font-size: 7px;
   }
 }
+
+
+/* Do not conceal the original Mercedes iframe behind a full-screen loading mask. */
+.prestige-desert-sketchfab .prestige-desert-loading {
+  inset: auto;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  min-height: 0;
+  width: min(430px,86vw);
+  background: rgba(14,12,11,.8);
+  border: 1px solid rgba(222,192,145,.32);
+  backdrop-filter: blur(9px);
+  padding: 20px 24px;
+  gap: 12px;
+  z-index: 9;
+}
+.prestige-desert-sketchfab .prestige-desert-loading-mark {
+  display: none;
+}
+.prestige-desert-viewer-note {
+  position: absolute;
+  z-index: 11;
+  top: clamp(174px,26vh,240px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px,88vw);
+  padding: 18px 22px;
+  color: #f2e5cf;
+  background: rgba(15,13,12,.86);
+  border: 1px solid rgba(224,198,154,.36);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  font: 500 11px/1.7 'DM Sans',sans-serif;
+  box-shadow: 0 18px 60px rgba(0,0,0,.3);
+}
+.prestige-desert-viewer-note span {
+  display: block;
+  margin-top: 6px;
+  color: #d6bea0;
+}
+.prestige-desert-viewer-note a { color: #ffe1a8; text-decoration: underline; }
