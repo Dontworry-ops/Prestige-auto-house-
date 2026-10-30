@@ -96,7 +96,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     const p = scrollProgress;
     if (p <= .012) return;
     // Follow the exact same small, circular path as the car in the frame.
-    const radius = Math.min(w * .085, h * .17);
+    const radius = Math.min(w * .10, h * .19);
     const centerX = w * .50 - radius;
     const centerY = h * .50;
     const samples = Math.floor(Math.min(p / .59, 1) * 115);
@@ -284,7 +284,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   // This also supplies a visible drift path if the third-party node API
   // exposes a non-editable root.
   const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
-  const orbitRadius = Math.min(viewportWidth * .085, 134);
+  const orbitRadius = Math.min(viewportWidth * .10, 170);
   const route = circle(scrollProgress);
   const escape = clamp((scrollProgress - .59) / .27);
   const fullScale = viewportWidth < 700 ? 5.8 : 4.8;
