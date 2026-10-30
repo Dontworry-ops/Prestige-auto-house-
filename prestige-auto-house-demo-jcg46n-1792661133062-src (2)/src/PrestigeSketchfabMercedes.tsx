@@ -95,12 +95,13 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     ctx.clearRect(0, 0, w, h);
     const p = scrollProgress;
     if (p <= .012) return;
-    const radius = Math.min(w * .175, h * .24);
-    const centerX = w * .52;
-    const centerY = h * .53;
+    // Follow the exact same small, circular path as the car in the frame.
+    const radius = Math.min(w * .085, h * .17);
+    const centerX = w * .50 - radius;
+    const centerY = h * .50;
     const samples = Math.floor(Math.min(p / .59, 1) * 115);
     for (let i = 0; i < samples; i += 1) {
-      const a = (i / 114) * Math.PI * 2 - Math.PI / 2;
+      const a = (i / 114) * Math.PI * 2;
       const age = samples - i;
       const drift = age * .44;
       const x = centerX + radius * Math.cos(a) + Math.sin(i * 27.23) * drift;
@@ -277,6 +278,20 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     };
   }, []);
 
+  // Sketchfab's imported camera bounds are vastly wider than the vehicle.
+  // Scale just the existing model viewport (not another model or a video)
+  // so the Mercedes fills the screen while the source asset stays untouched.
+  // This also supplies a visible drift path if the third-party node API
+  // exposes a non-editable root.
+  const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
+  const orbitRadius = Math.min(viewportWidth * .085, 134);
+  const route = circle(scrollProgress);
+  const escape = clamp((scrollProgress - .59) / .27);
+  const fullScale = viewportWidth < 700 ? 5.8 : 4.8;
+  const cameraScale = fullScale * (1 - escape * .32);
+  const carOffsetX = route.x * orbitRadius + escape * Math.min(viewportWidth * .19, 290);
+  const carOffsetY = route.y * orbitRadius - escape * Math.min(viewportWidth * .1, 150);
+
   return (
     <div className="prestige-desert-scene prestige-desert-sketchfab">
       <div className="prestige-desert-remote-background" aria-hidden="true" />
@@ -289,6 +304,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       <iframe
         ref={iframeRef}
         className={state === 'error' ? 'prestige-desert-sketchfab-frame viewer-unavailable' : 'prestige-desert-sketchfab-frame'}
+        style={{ transform: `translate3d(${carOffsetX.toFixed(1)}px, ${carOffsetY.toFixed(1)}px, 0) scale(${cameraScale.toFixed(3)})` }}
         title="Original Mercedes-AMG GT3 Evo 3D car model by vecarz"
         allow="autoplay; fullscreen; xr-spatial-tracking"
         allowFullScreen
