@@ -3106,3 +3106,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     transform: none;
   }
 }
+
+
+/* Final Mercedes GT3 camera composition: keep the full car cinematic,
+   rather than a small dot in the middle of a wide Sketchfab desert. */
+.prestige-desert-sketchfab-frame {
+  transform-origin: 50% 43%;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+@media (max-width: 700px) {
+  .prestige-desert-sketchfab-frame {
+    transform-origin: 50% 45%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prestige-desert-sketchfab-frame {
+    will-change: auto;
+  }
+}
