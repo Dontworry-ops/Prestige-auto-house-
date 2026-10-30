@@ -32,24 +32,26 @@ const clamp = (n: number, a = 0, b = 1) => Math.max(a, Math.min(b, n));
 const smooth = (t: number) => { const x = clamp(t); return x * x * (3 - 2 * x); };
 const CIRCLE_END = 0.59;
 const STRAIGHT_END = 0.86;
-const R = 2.8;
+const R = 2.55;
+const SLIP = 20 * Math.PI / 180;
 
 function routeAt(progress: number) {
   const p = clamp(progress);
   if (p <= CIRCLE_END) {
     const theta = (p / CIRCLE_END) * Math.PI * 2;
     return {
-      x: R * Math.cos(theta),
+      x: R * (Math.cos(theta) - 1),
       z: R * Math.sin(theta),
-      yaw: -theta - .34,
+      // In the Three.js Y-up world, positive heading toward +Z is -Y rotation.
+      yaw: -theta - Math.PI / 2 + SLIP,
       drift: true,
     };
   }
   const t = clamp((p - CIRCLE_END) / (STRAIGHT_END - CIRCLE_END));
   return {
-    x: R + Math.sin(t * Math.PI) * .08,
-    z: t * 16.5,
-    yaw: -.32 * (1 - smooth(t)),
+    x: 0,
+    z: 11 * t * t,
+    yaw: -(Math.PI * 2.5 - SLIP * (1 - smooth(t))),
     drift: false,
   };
 }
@@ -234,16 +236,16 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
       // A warm, almost-black strip of tarmac heads toward the desert horizon.
       const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x31302d, roughness: .98 });
       mats.push(roadMaterial);
-      const road = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 55), roadMaterial);
+      const road = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 33), roadMaterial);
       geo.push(road.geometry);
       road.rotation.x = -Math.PI / 2;
-      road.position.set(R, -.275, 16.5);
+      road.position.set(0, -.275, 16.5);
       scene.add(road);
 
       const shoulderMaterial = new THREE.MeshBasicMaterial({ color: 0xb78360, transparent: true, opacity: .65 });
       mats.push(shoulderMaterial);
-      for (const x of [R - 2.92, R + 2.92]) {
-        const geometry = new THREE.PlaneGeometry(.06, 55);
+      for (const x of [-2.92, 2.92]) {
+        const geometry = new THREE.PlaneGeometry(.06, 33);
         geo.push(geometry);
         const edge = new THREE.Mesh(geometry, shoulderMaterial);
         edge.rotation.x = -Math.PI / 2;
@@ -259,7 +261,7 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
       mats.push(skidMaterial);
       const skidMark = new THREE.Mesh(skidGeometry, skidMaterial);
       skidMark.rotation.x = -Math.PI / 2;
-      skidMark.position.set(0, -.265, 0);
+      skidMark.position.set(-R, -.265, 0);
       scene.add(skidMark);
 
       // Dust clouds are billboarded sprites, all placed deterministically
@@ -318,8 +320,9 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
           const factor = 4.1 / length;
           model.scale.setScalar(factor);
           model.position.set(-center.x * factor, -bounds.min.y * factor - .1, -center.z * factor);
-          // Rotate the model geometry if its long axis points along the X axis.
-          if (dim.x > dim.z) model.rotation.y = Math.PI / 2;
+          // Preserve the original +X forward orientation; only align models that
+          // were exported lengthwise along Z. The licensed Mercedes is X-long.
+          if (dim.z > dim.x) model.rotation.y = -Math.PI / 2;
           car.add(model);
           setLoadState('ready');
           loadedRef.current?.();
@@ -353,8 +356,8 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
         }
         // Top view changes into a gentle tracking shot as the car accelerates.
         const roadPhase = smooth((p - CIRCLE_END) / (STRAIGHT_END - CIRCLE_END));
-        const target = new THREE.Vector3(1.1 + roadPhase * .8, 0, 2.5 + roadPhase * 5.5);
-        const destination = new THREE.Vector3(-.8 + roadPhase * 2, 20.8 - roadPhase * 2.3, 9.5 + roadPhase * 5.5);
+        const target = new THREE.Vector3(-R + roadPhase * R, 0, roadPhase * 4.5);
+        const destination = new THREE.Vector3(-R + roadPhase * R, 20.8 - roadPhase * 2.3, 9.5 + roadPhase * 4.5);
         camera.position.lerp(destination, Math.min(1, dt * 3));
         camera.lookAt(target);
         for (let i = 0; i < puffs.length; i++) {
