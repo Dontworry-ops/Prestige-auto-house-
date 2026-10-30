@@ -173,8 +173,15 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
   useEffect(() => {
     let cancelled = false;
     let raf = 0;
+    let matrixInFlight = false;
+    let matrixInFlightSince = 0;
+    let viewerOnscreen = false;
     const iframe = iframeRef.current;
     if (!iframe) return;
+    const frameObserver = new IntersectionObserver(entries => {
+      viewerOnscreen = Boolean(entries[0]?.isIntersecting);
+    }, { threshold: 0 });
+    frameObserver.observe(iframe);
     let ready = false;
     // A slow third-party model download is not an error; keep it loading.
     const timeout = window.setTimeout(() => {
@@ -184,10 +191,12 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
     const tick = () => {
       if (cancelled || !ready || !viewerRef.current) return;
       const now = performance.now();
-      const progressChanged = Math.abs(progressRef.current - lastProgressSentRef.current) > .003;
-      if (progressChanged && now - lastSentRef.current >= 75 && !document.hidden) {
-        lastProgressSentRef.current = progressRef.current;
-        lastSentRef.current = now;
+      const progressChanged = Math.abs(progressRef.current - lastProgressSentRef.current) > .004;
+      // Sketchfab runs in a separate iframe. Never flood the iframe with
+      // queued setMatrix messages when it cannot finish one WebGL frame.
+      const canSend = !matrixInFlight || now - matrixInFlightSince > 600;
+      if (viewerOnscreen && progressChanged && canSend &&
+          now - lastSentRef.current >= 110 && !document.hidden) {
         const api = viewerRef.current;
         const p = progressRef.current;
         const mobile = window.innerWidth < 700;
@@ -209,7 +218,16 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
               .multiply(new Matrix4().makeRotationAxis(new Vector3(0, 0, 1), pose.yaw))
               .multiply(new Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z))
               .multiply(baseMatrix);
-            api.setMatrix(id, matrix.toArray());
+            matrixInFlight = true;
+            matrixInFlightSince = now;
+            lastSentRef.current = now;
+            lastProgressSentRef.current = p;
+            api.setMatrix(id, matrix.toArray(), error => {
+              matrixInFlight = false;
+              if (error && !cancelled) {
+                console.warn('Mercedes 3D transform was rejected by the viewer.');
+              }
+            });
           }
           // If the third-party viewer offers no editable root transform,
           // preserve the actual model without inventing motion via camera or iframe.
@@ -254,7 +272,7 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
                   position: [...camera.position],
                   target: [...camera.target],
                 };
-                pivotRef.current = new Vector3(camera.target[0], camera.target[1], camera.target[2]);
+                // The model pivot is resolved in its own local coordinate system.
                 api.setFov(43);
                 // Aim at the centre of the donut, not where the car started.
                 const target = [camera.target[0] - radius, camera.target[1], camera.target[2]];
@@ -269,16 +287,16 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
               if (err || !values) return;
               const nodes = (Array.isArray(values) ? values : Object.values(values)) as SceneNode[];
               const candidates = nodes.filter(n => n.type === 'MatrixTransform' && typeof n.instanceID === 'number');
-              const root =
-                candidates.find(n => /^Sketchfab_model$/i.test(n.name || '')) ||
-                candidates.find(n => /^root$/i.test(n.name || '')) ||
-                candidates.find(n => /^Sketchfab_model/i.test(n.name || '')) ||
-                candidates[0];
+              // The outer Sketchfab_model nodes contain rotated scene roots.
+              // Transform the Mercedes mesh parent itself; never the world root.
+              const root = candidates.find(n => /mercedes\s*amg\s*gt3/i.test(n.name || ''));
               if (!root || typeof root.instanceID !== 'number') return;
               api.getMatrix(root.instanceID, (error, matrix) => {
                 if (error || !matrix || matrix.length < 16) return;
                 nodeIdRef.current = root.instanceID as number;
                 baseMatrixRef.current = new Matrix4().fromArray(Array.from(matrix));
+                // Local-space centre measured from the original licensed GLB.
+                pivotRef.current = new Vector3(0.05292, 0, 0.62226);
               });
             });
             setState('ready');
@@ -302,6 +320,7 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
 
     return () => {
       cancelled = true;
+      frameObserver.disconnect();
       window.clearTimeout(timeout);
       window.cancelAnimationFrame(raf);
       viewerRef.current?.stop?.();
