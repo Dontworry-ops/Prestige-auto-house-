@@ -26,6 +26,7 @@ type ViewerApi = {
   setUserInteraction?: (enabled: boolean) => void;
   recenterCamera: (cb?: (error: unknown) => void) => void;
   setFov: (degrees: number) => void;
+  setTextureQuality?: (quality: 'ld' | 'sd' | 'hd') => void;
 };
 type SketchfabConstructor = new (version: string, iframe: HTMLIFrameElement) => {
   init: (uid: string, config: Record<string, unknown>) => void;
@@ -258,6 +259,8 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
             ready = true;
             window.clearTimeout(timeout);
             api.setBackground({ color: [0.54, .34, .25] });
+            // Standard textures are enough for a scroll-based overview; avoid HD GPU memory pressure.
+            api.setTextureQuality?.('sd');
             api.setUserInteraction?.(false);
             // Fit the entire model before switching to the wide overhead shot.
             api.recenterCamera(() => {
