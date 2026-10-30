@@ -3125,3 +3125,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     will-change: auto;
   }
 }
+
+
+/* Reduced jank: avoid full-screen GPU blur and costly canvas blend modes. */
+.is-desert-3d .prestige-desert-smoke-veil {
+  filter: none !important;
+  will-change: opacity, transform;
+  contain: paint;
+}
+.prestige-desert-sketchfab .prestige-desert-tire-smoke {
+  mix-blend-mode: normal !important;
+  opacity: .78;
+  pointer-events: none;
+}
+.prestige-car-scroll-progress span {
+  will-change: transform;
+}
