@@ -167,7 +167,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
             const follow = clamp((p - .59) / .27);
             const target = [t[0], t[1] - follow * radius * .7, t[2]];
             api.setCameraLookAt(
-              [target[0] + distance * .18, target[1] - distance * .22, target[2] + distance * 2.45],
+              [target[0] + distance * .18, target[1] - distance * .22, target[2] + distance * 1.42],
               target,
               0.15
             );
@@ -175,7 +175,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
             // Non-editable Sketchfab scene: orbit a wide overhead camera.
             const orbit = -Math.PI / 2 + clamp(p / .59) * Math.PI * 2;
             api.setCameraLookAt(
-              [t[0] + Math.cos(orbit) * distance * .56, t[1] + Math.sin(orbit) * distance * .56, t[2] + distance * 2.45],
+              [t[0] + Math.cos(orbit) * distance * .56, t[1] + Math.sin(orbit) * distance * .56, t[2] + distance * 1.42],
               t, .14
             );
           }
@@ -223,9 +223,9 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                   position: [...camera.position],
                   target: [...camera.target],
                 };
-                api.setFov(46);
+                api.setFov(43);
                 api.setCameraLookAt(
-                  [camera.target[0] + base * .18, camera.target[1] - base * .22, camera.target[2] + base * 2.45],
+                  [camera.target[0] + base * .18, camera.target[1] - base * .22, camera.target[2] + base * 1.42],
                   camera.target,
                   .15
                 );
