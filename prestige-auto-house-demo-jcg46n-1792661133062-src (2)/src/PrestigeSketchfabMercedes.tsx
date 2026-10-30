@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Matrix4, Vector3 } from 'three';
 
 /**
@@ -30,7 +30,7 @@ type ViewerApi = {
 type SketchfabConstructor = new (version: string, iframe: HTMLIFrameElement) => {
   init: (uid: string, config: Record<string, unknown>) => void;
 };
-type Props = { scrollProgress: number; onFailure: () => void; onLoaded?: () => void };
+type Props = { progressRef: RefObject<number>; onFailure: () => void; onLoaded?: () => void };
 const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
 // The Mercedes is 4.65 m long and points along its local +X axis.
 // Drift = translation along a real circle + its heading roughly tangent to the
@@ -78,10 +78,9 @@ function loadSketchfabScript(): Promise<void> {
   return sharedScript;
 }
 
-export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, onLoaded }: Props) {
+export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLoaded }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const dustRef = useRef<HTMLCanvasElement>(null);
-  const progressRef = useRef(scrollProgress);
   const failureRef = useRef(onFailure);
   const loadedRef = useRef(onLoaded);
   const viewerRef = useRef<ViewerApi | null>(null);
@@ -93,59 +92,83 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   const lastProgressSentRef = useRef(-100);
   const [state, setState] = useState<'loading' | 'ready' | 'slow' | 'error'>('loading');
 
-  useEffect(() => { progressRef.current = scrollProgress; }, [scrollProgress]);
   useEffect(() => { failureRef.current = onFailure; loadedRef.current = onLoaded; }, [onFailure, onLoaded]);
 
-  // Deterministic tyre-dust path in the screen plane. The real Mercedes remains
-  // 3D inside the official model viewer; this canvas is only smoke compositing.
+  // Lightweight smoke is drawn directly from a stable scroll ref.
+  // Never allocate gradients or rerender React components on each scroll event.
   useEffect(() => {
     const canvas = dustRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const bw = Math.max(1, Math.round(w * ratio));
-    const bh = Math.max(1, Math.round(h * ratio));
-    if (canvas.width !== bw || canvas.height !== bh) {
-      canvas.width = bw;
-      canvas.height = bh;
+
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 96;
+    const spriteCtx = sprite.getContext('2d');
+    if (spriteCtx) {
+      const fog = spriteCtx.createRadialGradient(48, 48, 0, 48, 48, 48);
+      fog.addColorStop(0, 'rgba(250,225,194,.42)');
+      fog.addColorStop(.55, 'rgba(240,214,175,.19)');
+      fog.addColorStop(1, 'rgba(240,214,175,0)');
+      spriteCtx.fillStyle = fog;
+      spriteCtx.fillRect(0, 0, 96, 96);
     }
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const p = scrollProgress;
-    if (p <= .012) return;
-    // Tire smoke traces the very same projected route as the actual 3D car.
-    // No independent fake circular motion or sideways moving 3D background.
-    const mobile = w < 700;
-    const radius = circleRadius(mobile);
-    const distance = stageDistance(mobile);
-    const displayScale = mobile ? 1.02 : 1.28;
-    const pxPerMetre = h / (2 * distance * Math.tan(43 * Math.PI / 360)) * displayScale;
-    const centreX = w * .5;
-    const centreY = h * .53;
-    const end = Math.min(p, ESCAPE_END);
-    const samples = Math.ceil(end / ESCAPE_END * 160);
-    for (let i = 0; i < samples; i += 1) {
-      const trailP = i / 159 * ESCAPE_END;
-      if (trailP >= p) break;
-      const pose = driftPose(trailP, radius);
-      const age = p - trailP;
-      if (age > .42) continue;
-      const drift = Math.min(28, age * 85);
-      const x = centreX + (pose.x + radius) * pxPerMetre + Math.sin(i * 11.38) * drift;
-      const y = centreY - pose.y * pxPerMetre + Math.cos(i * 8.19) * drift;
-      const cloudSize = 13 + Math.min(55, age * 125);
-      const alpha = .21 * (1 - age / .42);
-      const gradient = ctx.createRadialGradient(x, y, 1, x, y, cloudSize);
-      gradient.addColorStop(0, `rgba(252,224,184,${Math.max(0, alpha).toFixed(3)})`);
-      gradient.addColorStop(.55, `rgba(238,204,164,${Math.max(0, alpha * .42).toFixed(3)})`);
-      gradient.addColorStop(1, 'rgba(238,204,164,0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x-cloudSize,y-cloudSize,cloudSize*2,cloudSize*2);
-    }
-  }, [scrollProgress]);
+
+    let frame = 0;
+    let lastDrawAt = 0;
+    let lastProgress = -1;
+    let visible = true;
+    const observer = new IntersectionObserver(entries => {
+      visible = Boolean(entries[0]?.isIntersecting);
+    }, { threshold: 0 });
+    observer.observe(canvas);
+
+    const paint = (now: number) => {
+      frame = window.requestAnimationFrame(paint);
+      if (!visible || document.hidden || now - lastDrawAt < 65) return;
+      const p = progressRef.current;
+      if (Math.abs(p - lastProgress) < .002) return;
+      lastProgress = p;
+      lastDrawAt = now;
+
+      const w = Math.max(1, Math.round(canvas.clientWidth));
+      const h = Math.max(1, Math.round(canvas.clientHeight));
+      // A 1x overlay is enough for soft smoke and avoids high-DPI GPU work.
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      ctx.clearRect(0, 0, w, h);
+      if (p < .018) return;
+
+      const mobile = w < 700;
+      const radius = circleRadius(mobile);
+      const distance = stageDistance(mobile);
+      const pxPerMetre = h / (2 * distance * Math.tan(43 * Math.PI / 360));
+      const centerX = w * .5;
+      const centerY = h * .53;
+      const count = Math.min(75, Math.ceil(p / ESCAPE_END * 75));
+      for (let i = 0; i < count; i++) {
+        const trailP = i / 74 * ESCAPE_END;
+        if (trailP >= p) break;
+        const age = p - trailP;
+        if (age > .38) continue;
+        const pose = driftPose(trailP, radius);
+        const drift = age * 35;
+        const x = centerX + (pose.x + radius) * pxPerMetre + Math.sin(i * 7.7) * drift;
+        const y = centerY - pose.y * pxPerMetre + Math.cos(i * 13.2) * drift;
+        const size = 24 + age * 120;
+        ctx.globalAlpha = Math.max(0, .72 * (1 - age / .38));
+        ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+      }
+      ctx.globalAlpha = 1;
+    };
+    frame = window.requestAnimationFrame(paint);
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [progressRef]);
 
   useEffect(() => {
     let cancelled = false;
