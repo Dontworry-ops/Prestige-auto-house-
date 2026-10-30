@@ -285,7 +285,9 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
 
   // The iframe is a fixed stage; it must never drift out of the browser.
   // All real movement is applied to the model node through Sketchfab's API.
-  const stageScale = state === 'ready' && typeof window !== 'undefined' && window.innerWidth >= 700 ? 1.12 : 1;
+  const stageScale = state === 'ready'
+    ? (typeof window !== 'undefined' && window.innerWidth >= 700 ? 1.28 : 1.02)
+    : 1;
 
   return (
     <div className="prestige-desert-scene prestige-desert-sketchfab">
