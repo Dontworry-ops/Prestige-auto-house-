@@ -120,7 +120,7 @@ const vehicles: Car[] = [
 const money = (value: number) => 'R ' + value.toLocaleString('en-ZA');
 
 
-function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
+function MercedesDriftScene() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -136,7 +136,7 @@ function MercedesDriftScene({ scrollProgress }: { scrollProgress: number }) {
   }, []);
 
   return (
-    <div className="drift-car" style={{ opacity: Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.78 ? 1 : (1 - scrollProgress) / 0.22)) }}>
+    <div className="drift-car" style={{ opacity: 'var(--drift-opacity, 1)' }}>
       <video
         ref={videoRef}
         className="drift-hero-video"
@@ -157,7 +157,13 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [brandMenuOpen, setBrandMenuOpen] = useState(false);
   const [introComplete, setIntroComplete] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  // No React state or re-render on scroll; this ref is read directly by the renderer.
+  const scrollProgressRef = useRef(0);
+  const driftStickyRef = useRef<HTMLDivElement>(null);
+  const stageLabelRef = useRef<HTMLDivElement>(null);
+  const smokeVeilRef = useRef<HTMLDivElement>(null);
+  const finaleRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLSpanElement>(null);
   const [carMode, setCarMode] = useState<'3d' | 'film'>('3d');
   const handleCar3DFailure = useCallback(() => {
     // Never silently swap away from the owner's original Mercedes model.
@@ -187,31 +193,51 @@ function App() {
     return () => window.clearTimeout(introTimer);
   }, []);
 
+  const syncScrollScene = useCallback(() => {
+    const node = driftRef.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height - window.innerHeight)));
+    scrollProgressRef.current = p;
+    const opacity = Math.min(1, Math.max(0, p < .08 ? p / .08 : p < .78 ? 1 : (1 - p) / .22));
+    driftStickyRef.current?.style.setProperty('--drift-opacity', String(opacity));
+    if (stageLabelRef.current) stageLabelRef.current.textContent =
+      p < .59 ? '01 / THE CIRCLE' : p < .86 ? '02 / THE ESCAPE' : '03 / THE REVEAL';
+    const smoke = Math.min(1, Math.max(0, (p - .76) / .19));
+    if (smokeVeilRef.current) {
+      smokeVeilRef.current.style.opacity = String(smoke);
+      smokeVeilRef.current.style.transform = `scale(${1 + smoke * .15})`;
+    }
+    if (finaleRef.current) {
+      finaleRef.current.style.opacity = String(Math.min(1, Math.max(0, (p - .89) / .09)));
+      finaleRef.current.style.color = p > .965 ? '#f2e9d6' : '#2b241d';
+    }
+    if (progressBarRef.current) progressBarRef.current.style.transform = `scaleX(${p})`;
+  }, []);
+
   useEffect(() => {
-    let ticking = false;
-    const update = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        const node = driftRef.current;
-        if (node) {
-          const rect = node.getBoundingClientRect();
-          const range = Math.max(1, rect.height - window.innerHeight);
-          setScrollProgress(
-            Math.min(1, Math.max(0, -rect.top / range))
-          );
-        }
-        ticking = false;
+    let frame = 0;
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        syncScrollScene();
       });
     };
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    schedule();
     return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
     };
-  }, []);
+  }, [syncScrollScene]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(syncScrollScene);
+    return () => window.cancelAnimationFrame(frame);
+  }, [carMode, syncScrollScene]);
 
   useEffect(() => {
     const nodes = document.querySelectorAll('[data-reveal]');
@@ -268,10 +294,6 @@ function App() {
     setBodyType('All body types');
     setSort('featured');
   };
-  const driftStyle = {
-    '--drift-opacity': Math.min(1, Math.max(0, scrollProgress < 0.08 ? scrollProgress / 0.08 : scrollProgress < 0.78 ? 1 : (1 - scrollProgress) / 0.22)),
-  } as React.CSSProperties;
-
   return (
     <main className="site-shell">
       {!introComplete && <PrestigeIntro3D onSkip={() => setIntroComplete(true)} />}
@@ -369,34 +391,20 @@ function App() {
       </section>
 
       <section className="drift-story" id="experience" ref={driftRef}>
-        <div className={carMode === '3d' ? 'drift-sticky is-3d-mode is-desert-3d' : 'drift-sticky is-film-mode'} style={driftStyle}>
+        <div ref={driftStickyRef} className={carMode === '3d' ? 'drift-sticky is-3d-mode is-desert-3d' : 'drift-sticky is-film-mode'}>
           {/* Keep the 3D viewer mounted across Film/3D switching: no repeat 55 MB download. */}
           <div className={carMode === 'film' ? 'prestige-persistent-3d-layer hidden-for-film' : 'prestige-persistent-3d-layer'}
             aria-hidden={carMode === 'film'}>
-            <PrestigeDesertDriftScene scrollProgress={scrollProgress} onFailure={handleCar3DFailure} />
+            <PrestigeDesertDriftScene progressRef={scrollProgressRef} onFailure={handleCar3DFailure} />
           </div>
           {carMode === '3d' && (
             <>
-              <div className="prestige-desert-stage" aria-hidden="true">
-                {scrollProgress < .59 ? '01 / THE CIRCLE' : scrollProgress < .86 ? '02 / THE ESCAPE' : '03 / THE REVEAL'}
-              </div>
-              <div
-                className="prestige-desert-smoke-veil"
-                aria-hidden="true"
-                style={{
-                  opacity: Math.min(1, Math.max(0, (scrollProgress - .76) / .19)),
-                  transform: `scale(${1 + Math.min(1, Math.max(0, (scrollProgress - .76) / .19)) * .15})`,
-                  filter: `blur(25px) brightness(${1 - Math.min(1, Math.max(0, (scrollProgress - .93) / .07)) * .9})`,
-                }}
-              />
-              <div
-                className="prestige-desert-final-title"
-                aria-hidden="true"
-                style={{ opacity: Math.min(1, Math.max(0, (scrollProgress - .89) / .09)), color: scrollProgress > .965 ? "#f2e9d6" : "#2b241d" }}
-              >THE COLLECTION AWAITS</div>
+              <div ref={stageLabelRef} className="prestige-desert-stage" aria-hidden="true">01 / THE CIRCLE</div>
+              <div ref={smokeVeilRef} className="prestige-desert-smoke-veil" aria-hidden="true" style={{ opacity: 0 }} />
+              <div ref={finaleRef} className="prestige-desert-final-title" aria-hidden="true" style={{ opacity: 0 }}>THE COLLECTION AWAITS</div>
             </>
           )}
-          {carMode === 'film' && <MercedesDriftScene scrollProgress={scrollProgress} />}
+          {carMode === 'film' && <MercedesDriftScene />}
           <div className="drift-copy">
             <span className="micro-label">{carMode === '3d' ? 'MERCEDES-AMG GT3 · SUNSET DESERT' : 'THE CINEMATIC FILM'}</span>
             <h2>
@@ -418,7 +426,7 @@ function App() {
             >WATCH FILM</button>
           </div>
           <div className="prestige-car-scroll-progress" aria-hidden="true">
-            <span style={{ width: `${Math.round(scrollProgress * 100)}%` }} />
+            <span ref={progressBarRef} style={{ width: '100%', transform: 'scaleX(0)', transformOrigin: 'left center' }} />
           </div>
         </div>
       </section>
