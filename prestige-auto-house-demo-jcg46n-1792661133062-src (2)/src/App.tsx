@@ -175,9 +175,11 @@ function App() {
   // A 55 MB Sketchfab asset must never start automatically on the home page.
   // The cinematic film is the fast default; real 3D remains opt-in.
   const [carMode, setCarMode] = useState<'3d' | 'film'>('film');
+  const [threeDNotice, setThreeDNotice] = useState('');
   const handleCar3DFailure = useCallback(() => {
-    // Never silently swap away from the owner's original Mercedes model.
-    console.warn('The original Mercedes 3D viewer needs a supported WebGL browser.');
+    // Restore a responsive page and tell visitors why instead of freezing.
+    setThreeDNotice('3D is too demanding for this browser right now. Film mode has been restored.');
+    setCarMode('film');
   }, []);
   const [quoteSent, setQuoteSent] = useState(false);
   const [quote, setQuote] = useState({ name: '', email: '', phone: '', desiredCar: '', budget: 'Flexible', notes: '' });
@@ -430,15 +432,18 @@ function App() {
               type="button"
               className={carMode === '3d' ? 'active' : ''}
               aria-pressed={carMode === '3d'}
-              onClick={() => setCarMode('3d')}
+              onClick={() => { setThreeDNotice(''); setCarMode('3d'); }}
             >3D DRIFT</button>
             <button
               type="button"
               className={carMode === 'film' ? 'active' : ''}
               aria-pressed={carMode === 'film'}
-              onClick={() => setCarMode('film')}
+              onClick={() => { setThreeDNotice(''); setCarMode('film'); }}
             >WATCH FILM</button>
           </div>
+          {carMode === 'film' && threeDNotice && (
+            <div className="prestige-3d-fallback-notice" role="status">{threeDNotice}</div>
+          )}
           <div className="prestige-car-scroll-progress" aria-hidden="true">
             <span ref={progressBarRef} style={{ width: '100%', transform: 'scaleX(0)', transformOrigin: 'left center' }} />
           </div>
