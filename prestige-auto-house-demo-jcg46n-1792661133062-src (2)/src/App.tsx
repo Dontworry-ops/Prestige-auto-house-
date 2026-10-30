@@ -126,13 +126,22 @@ function MercedesDriftScene() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    const tryPlay = () => {
-      const playback = video.play();
-      if (playback && typeof playback.catch === 'function') playback.catch(() => {});
+
+    // Offscreen decoding of a 1080p/60fps video can starve smooth scrolling.
+    // Play only while the cinematic section is near the viewport.
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting) {
+        const playback = video.play();
+        if (playback && typeof playback.catch === 'function') playback.catch(() => {});
+      } else {
+        video.pause();
+      }
+    }, { rootMargin: '240px 0px', threshold: 0 });
+    observer.observe(video);
+    return () => {
+      observer.disconnect();
+      video.pause();
     };
-    video.addEventListener('canplay', tryPlay);
-    tryPlay();
-    return () => video.removeEventListener('canplay', tryPlay);
   }, []);
 
   return (
@@ -143,10 +152,9 @@ function MercedesDriftScene() {
         src="https://videos.pexels.com/video-files/16532416/16532416-hd_1920_1080_60fps.mp4"
         poster="https://images.pexels.com/videos/16532416/bmw-fast-car-freeway-moving-car-16532416.jpeg?auto=compress&w=1260&h=750&dpr=1"
         muted
-        autoPlay
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         aria-label="Cinematic BMW driving scene for Prestige Auto House"
       />
     </div>
