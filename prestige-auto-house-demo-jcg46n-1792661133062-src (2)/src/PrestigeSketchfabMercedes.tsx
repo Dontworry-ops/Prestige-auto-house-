@@ -19,7 +19,7 @@ type ViewerApi = {
   getCameraLookAt: (cb: (error: unknown, camera: CameraPose) => void) => void;
   setCameraLookAt: (position: number[], target: number[], duration?: number) => void;
   getNodeMap: (cb: (error: unknown, nodes: SceneNode[] | Record<string, SceneNode>) => void) => void;
-  getMatrix: (id: number, cb: (error: unknown, matrix: number[]) => void) => void;
+  getMatrix: (id: number, cb: (error: unknown, matrix: ArrayLike<number>) => void) => void;
   translate: (id: number, point: number[], options: { duration: number }) => void;
   rotate: (id: number, angleAndAxis: number[], options: { duration: number }) => void;
   setBackground: (options: { color: number[] }) => void;
@@ -169,9 +169,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
         const mobile = window.innerWidth < 700;
         const radius = circleRadius(mobile);
         const pose = driftPose(p, radius);
-        const camera = cameraRef.current;
-        if (camera) {
-          const t = camera.target;
+        if (cameraRef.current) {
           // Keep the camera stationary: the 3D vehicle moves in the scene,
           // not the renderer. Camera orbit would make it look as if the car
           // simply spun or if the whole desert were sliding beneath it.
@@ -250,7 +248,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                 candidates[0];
               if (!root || typeof root.instanceID !== 'number') return;
               api.getMatrix(root.instanceID, (error, matrix) => {
-                if (error || !Array.isArray(matrix) || matrix.length < 16) return;
+                if (error || !matrix || matrix.length < 16) return;
                 nodeIdRef.current = root.instanceID as number;
                 originalPositionRef.current = [matrix[12],matrix[13],matrix[14]];
               });
