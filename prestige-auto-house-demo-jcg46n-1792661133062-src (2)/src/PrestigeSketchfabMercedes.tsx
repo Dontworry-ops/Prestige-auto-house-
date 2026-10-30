@@ -32,15 +32,35 @@ type SketchfabConstructor = new (version: string, iframe: HTMLIFrameElement) => 
 };
 type Props = { scrollProgress: number; onFailure: () => void; onLoaded?: () => void };
 const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
-const circle = (p: number) => {
-  const phase = clamp(p / .59);
-  const a = phase * Math.PI * 2;
-  if (p <= .59) {
-    return { x: Math.cos(a) - 1, y: Math.sin(a), yaw: a + Math.PI * .5 };
+// The Mercedes is 4.65 m long and points along its local +X axis.
+// Drift = translation along a real circle + its heading roughly tangent to the
+// circle, with a 20-degree slip angle. Never move the entire viewer/iframe.
+const CIRCLE_END = .59;
+const ESCAPE_END = .86;
+const SLIP_ANGLE = 20 * Math.PI / 180;
+const circleRadius = (mobile: boolean) => mobile ? .95 : 2.55;
+const stageDistance = (mobile: boolean) => mobile ? 20 : 12.8;
+const smoothstep = (x: number) => { const p = clamp(x); return p * p * (3 - 2 * p); };
+
+function driftPose(progress: number, radius: number) {
+  const p = clamp(progress);
+  if (p <= CIRCLE_END) {
+    const theta = p / CIRCLE_END * Math.PI * 2;
+    return {
+      x: radius * (Math.cos(theta) - 1),
+      y: radius * Math.sin(theta),
+      // Slip the nose inward rather than spinning on the centre point.
+      yaw: theta + Math.PI / 2 - SLIP_ANGLE,
+    };
   }
-  const t = clamp((p - .59) / .27);
-  return { x: Math.sin(t * Math.PI) * .1, y: t * -2.4, yaw: Math.PI * 2.5 + t * .25 };
-};
+  const t = clamp((p - CIRCLE_END) / (ESCAPE_END - CIRCLE_END));
+  return {
+    // Exit tangentially from the completed circle, accelerating forward.
+    x: 0,
+    y: 11 * t * t,
+    yaw: Math.PI * 2.5 - SLIP_ANGLE * (1 - smoothstep(t)),
+  };
+}
 let sharedScript: Promise<void> | undefined;
 function loadSketchfabScript(): Promise<void> {
   if (typeof window === 'undefined') return Promise.reject(new Error('No browser'));
@@ -95,38 +115,34 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     ctx.clearRect(0, 0, w, h);
     const p = scrollProgress;
     if (p <= .012) return;
-    // Follow the exact same small, circular path as the car in the frame.
-    const radius = Math.min(w * .10, h * .19);
-    const centerX = w * .50 - radius;
-    const centerY = h * .50;
-    const samples = Math.floor(Math.min(p / .59, 1) * 115);
+    // Tire smoke traces the very same projected route as the actual 3D car.
+    // No independent fake circular motion or sideways moving 3D background.
+    const mobile = w < 700;
+    const radius = circleRadius(mobile);
+    const distance = stageDistance(mobile);
+    const displayScale = mobile ? 1.02 : 1.28;
+    const pxPerMetre = h / (2 * distance * Math.tan(43 * Math.PI / 360)) * displayScale;
+    const centreX = w * .5;
+    const centreY = h * .53;
+    const end = Math.min(p, ESCAPE_END);
+    const samples = Math.ceil(end / ESCAPE_END * 160);
     for (let i = 0; i < samples; i += 1) {
-      const a = (i / 114) * Math.PI * 2;
-      const age = samples - i;
-      const drift = age * .44;
-      const x = centerX + radius * Math.cos(a) + Math.sin(i * 27.23) * drift;
-      const y = centerY + radius * Math.sin(a) - drift * .33;
-      const r = 15 + age * .36;
-      const g = ctx.createRadialGradient(x, y, 1, x, y, r);
-      g.addColorStop(0, 'rgba(255,222,179,.15)');
-      g.addColorStop(.52, 'rgba(240,208,169,.08)');
-      g.addColorStop(1, 'rgba(231,196,151,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(x-r, y-r, r*2, r*2);
-    }
-    if (p > .59) {
-      const drive = clamp((p - .59) / .27);
-      for (let i = 0; i < 35; i++) {
-        const t = i / 34;
-        const x = centerX + Math.sin(i * 13.7) * 37 + t * w * .32;
-        const y = centerY - radius - drive * t * h * .51;
-        const r = 30 + t * 68;
-        const g = ctx.createRadialGradient(x,y,1,x,y,r);
-        g.addColorStop(0,'rgba(253,230,190,.12)');
-        g.addColorStop(1,'rgba(232,203,171,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(x-r,y-r,r*2,r*2);
-      }
+      const trailP = i / 159 * ESCAPE_END;
+      if (trailP >= p) break;
+      const pose = driftPose(trailP, radius);
+      const age = p - trailP;
+      if (age > .42) continue;
+      const drift = Math.min(28, age * 85);
+      const x = centreX + (pose.x + radius) * pxPerMetre + Math.sin(i * 11.38) * drift;
+      const y = centreY - pose.y * pxPerMetre + Math.cos(i * 8.19) * drift;
+      const cloudSize = 13 + Math.min(55, age * 125);
+      const alpha = .21 * (1 - age / .42);
+      const gradient = ctx.createRadialGradient(x, y, 1, x, y, cloudSize);
+      gradient.addColorStop(0, `rgba(252,224,184,${Math.max(0, alpha).toFixed(3)})`);
+      gradient.addColorStop(.55, `rgba(238,204,164,${Math.max(0, alpha * .42).toFixed(3)})`);
+      gradient.addColorStop(1, 'rgba(238,204,164,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x-cloudSize,y-cloudSize,cloudSize*2,cloudSize*2);
     }
   }, [scrollProgress]);
 
@@ -150,35 +166,27 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
         lastSentRef.current = now;
         const api = viewerRef.current;
         const p = progressRef.current;
-        const c = circle(p);
+        const mobile = window.innerWidth < 700;
+        const radius = circleRadius(mobile);
+        const pose = driftPose(p, radius);
         const camera = cameraRef.current;
         if (camera) {
           const t = camera.target;
-          // The exact owner's GLB is 4.65m long. A 13m overhead camera
-          // frames the vehicle sharply without magnifying a tiny WebGL raster.
-          const distance = window.innerWidth < 700 ? 17 : 12.8;
-          const radius = Math.min(2.25, Math.max(.25, distance * .12));
+          // Keep the camera stationary: the 3D vehicle moves in the scene,
+          // not the renderer. Camera orbit would make it look as if the car
+          // simply spun or if the whole desert were sliding beneath it.
           const id = nodeIdRef.current;
           const original = originalPositionRef.current;
           if (id !== null && original) {
-            api.translate(id, [original[0] + c.x * radius, original[1] + c.y * radius, original[2]], { duration: 0 });
-            api.rotate(id, [c.yaw, 0, 0, 1], { duration: 0 });
-            // Leave room for the ENTIRE car: no more close-up of just the roof.
-            const follow = clamp((p - .59) / .27);
-            const target = [t[0], t[1] - follow * radius * .7, t[2]];
-            api.setCameraLookAt(
-              [target[0] + distance * .18, target[1] - distance * .22, target[2] + distance],
-              target,
-              0.15
+            api.translate(
+              id,
+              [original[0] + pose.x, original[1] + pose.y, original[2]],
+              { duration: 0 }
             );
-          } else {
-            // Non-editable Sketchfab scene: orbit a wide overhead camera.
-            const orbit = -Math.PI / 2 + clamp(p / .59) * Math.PI * 2;
-            api.setCameraLookAt(
-              [t[0] + Math.cos(orbit) * distance * .56, t[1] + Math.sin(orbit) * distance * .56, t[2] + distance],
-              t, .14
-            );
+            api.rotate(id, [pose.yaw, 0, 0, 1], { duration: 0 });
           }
+          // If Sketchfab exposes no editable model node, don't counterfeit
+          // the drift by rotating the camera or moving the whole iframe.
         }
       }
       raf = window.requestAnimationFrame(tick);
@@ -212,7 +220,9 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
               if (cancelled) return;
               api.getCameraLookAt((err, camera) => {
                 if (err || !camera?.position || !camera?.target) return;
-                const stageDistance = window.innerWidth < 700 ? 17 : 12.8;
+                const mobile = window.innerWidth < 700;
+                const distance = stageDistance(mobile);
+                const radius = circleRadius(mobile);
                 // Store the original fitted distance, not the wide shot's
                 // distance. Otherwise each scroll update zooms out a second time.
                 cameraRef.current = {
@@ -220,10 +230,12 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                   target: [...camera.target],
                 };
                 api.setFov(43);
+                // Aim at the centre of the donut, not where the car started.
+                const target = [camera.target[0] - radius, camera.target[1], camera.target[2]];
                 api.setCameraLookAt(
-                  [camera.target[0] + stageDistance * .18, camera.target[1] - stageDistance * .22, camera.target[2] + stageDistance],
-                  camera.target,
-                  .15
+                  [target[0] + distance * .10, target[1] - distance * .10, target[2] + distance],
+                  target,
+                  .28
                 );
               });
             });
@@ -273,23 +285,9 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
     };
   }, []);
 
-  // Sketchfab's imported camera bounds are vastly wider than the vehicle.
-  // Scale just the existing model viewport (not another model or a video)
-  // so the Mercedes fills the screen while the source asset stays untouched.
-  // This also supplies a visible drift path if the third-party node API
-  // exposes a non-editable root.
-  const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
-  const orbitRadius = Math.min(viewportWidth * .10, 170);
-  const route = circle(scrollProgress);
-  const escape = clamp((scrollProgress - .59) / .27);
-  // Once the official 3D API is ready we move its CAMERA closer, preserving
-  // crisp model details. Large CSS magnification is used only while loading.
-  const fullScale = state === 'ready'
-    ? (viewportWidth < 700 ? 1.02 : 1.28)
-    : (viewportWidth < 700 ? 5.1 : 4.5);
-  const cameraScale = fullScale * (1 - escape * .32);
-  const carOffsetX = route.x * orbitRadius + escape * Math.min(viewportWidth * .19, 290);
-  const carOffsetY = route.y * orbitRadius - escape * Math.min(viewportWidth * .1, 150);
+  // The iframe is a fixed stage; it must never drift out of the browser.
+  // All real movement is applied to the model node through Sketchfab's API.
+  const stageScale = state === 'ready' && typeof window !== 'undefined' && window.innerWidth >= 700 ? 1.12 : 1;
 
   return (
     <div className="prestige-desert-scene prestige-desert-sketchfab">
@@ -303,7 +301,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       <iframe
         ref={iframeRef}
         className={state === 'error' ? 'prestige-desert-sketchfab-frame viewer-unavailable' : 'prestige-desert-sketchfab-frame'}
-        style={{ transform: `translate3d(${carOffsetX.toFixed(1)}px, ${carOffsetY.toFixed(1)}px, 0) scale(${cameraScale.toFixed(3)})` }}
+        style={{ transform: `scale(${stageScale})` }}
         title="Original Mercedes-AMG GT3 Evo 3D car model by vecarz"
         allow="autoplay; fullscreen; xr-spatial-tracking"
         allowFullScreen
