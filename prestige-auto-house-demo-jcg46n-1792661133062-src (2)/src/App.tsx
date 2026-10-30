@@ -201,8 +201,10 @@ function App() {
     scrollProgressRef.current = p;
     const opacity = Math.min(1, Math.max(0, p < .08 ? p / .08 : p < .78 ? 1 : (1 - p) / .22));
     driftStickyRef.current?.style.setProperty('--drift-opacity', String(opacity));
-    if (stageLabelRef.current) stageLabelRef.current.textContent =
-      p < .59 ? '01 / THE CIRCLE' : p < .86 ? '02 / THE ESCAPE' : '03 / THE REVEAL';
+    if (stageLabelRef.current) {
+      const stage = p < .59 ? '01 / THE CIRCLE' : p < .86 ? '02 / THE ESCAPE' : '03 / THE REVEAL';
+      if (stageLabelRef.current.textContent !== stage) stageLabelRef.current.textContent = stage;
+    }
     const smoke = Math.min(1, Math.max(0, (p - .76) / .19));
     if (smokeVeilRef.current) {
       smokeVeilRef.current.style.opacity = String(smoke);
