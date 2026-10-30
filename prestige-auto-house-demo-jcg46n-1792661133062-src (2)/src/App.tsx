@@ -384,14 +384,15 @@ function App() {
                 className="prestige-desert-smoke-veil"
                 aria-hidden="true"
                 style={{
-                  opacity: Math.min(1, Math.max(0, (scrollProgress - .76) / .23)),
-                  transform: `scale(${1 + Math.min(1, Math.max(0, (scrollProgress - .76) / .23)) * .15})`,
+                  opacity: Math.min(1, Math.max(0, (scrollProgress - .76) / .19)),
+                  transform: `scale(${1 + Math.min(1, Math.max(0, (scrollProgress - .76) / .19)) * .15})`,
+                  filter: `blur(25px) brightness(${1 - Math.min(1, Math.max(0, (scrollProgress - .93) / .07)) * .9})`,
                 }}
               />
               <div
                 className="prestige-desert-final-title"
                 aria-hidden="true"
-                style={{ opacity: Math.min(1, Math.max(0, (scrollProgress - .89) / .09)) }}
+                style={{ opacity: Math.min(1, Math.max(0, (scrollProgress - .89) / .09)), color: scrollProgress > .965 ? "#f2e9d6" : "#2b241d" }}
               >THE COLLECTION AWAITS</div>
             </>
           )}
