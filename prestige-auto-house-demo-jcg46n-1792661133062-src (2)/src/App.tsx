@@ -164,7 +164,9 @@ function App() {
   const smokeVeilRef = useRef<HTMLDivElement>(null);
   const finaleRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLSpanElement>(null);
-  const [carMode, setCarMode] = useState<'3d' | 'film'>('3d');
+  // A 55 MB Sketchfab asset must never start automatically on the home page.
+  // The cinematic film is the fast default; real 3D remains opt-in.
+  const [carMode, setCarMode] = useState<'3d' | 'film'>('film');
   const handleCar3DFailure = useCallback(() => {
     // Never silently swap away from the owner's original Mercedes model.
     console.warn('The original Mercedes 3D viewer needs a supported WebGL browser.');
@@ -394,11 +396,13 @@ function App() {
 
       <section className="drift-story" id="experience" ref={driftRef}>
         <div ref={driftStickyRef} className={carMode === '3d' ? 'drift-sticky is-3d-mode is-desert-3d' : 'drift-sticky is-film-mode'}>
-          {/* Keep the 3D viewer mounted across Film/3D switching: no repeat 55 MB download. */}
-          <div className={carMode === 'film' ? 'prestige-persistent-3d-layer hidden-for-film' : 'prestige-persistent-3d-layer'}
-            aria-hidden={carMode === 'film'}>
-            <PrestigeDesertDriftScene progressRef={scrollProgressRef} onFailure={handleCar3DFailure} />
-          </div>
+          {/* Only mount the expensive Sketchfab scene on explicit user action.
+              Unmount when switching to film to release its GPU resources. */}
+          {carMode === '3d' && (
+            <div className="prestige-persistent-3d-layer">
+              <PrestigeDesertDriftScene progressRef={scrollProgressRef} onFailure={handleCar3DFailure} />
+            </div>
+          )}
           {carMode === '3d' && (
             <>
               <div ref={stageLabelRef} className="prestige-desert-stage" aria-hidden="true">01 / THE CIRCLE</div>
