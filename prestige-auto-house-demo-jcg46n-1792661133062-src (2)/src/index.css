@@ -3141,3 +3141,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .prestige-car-scroll-progress span {
   will-change: transform;
 }
+
+
+/* PERFORMANCE SAFEGUARDS — original Mercedes 3D stays optional.
+   Shorter sticky section and native wheel scrolling prevent the experience
+   from feeling frozen while expensive third-party WebGL is initialized. */
+html { scroll-behavior: auto; }
+.drift-story {
+  height: 160svh;
+  min-height: 760px;
+}
+.drift-story:has(.is-desert-3d) {
+  height: 220svh;
+  min-height: 1080px;
+}
+.drift-sticky {
+  touch-action: pan-y;
+  overscroll-behavior-y: auto;
+}
+.prestige-desert-scene,
+.prestige-persistent-3d-layer {
+  contain: paint;
+}
+.prestige-desert-sketchfab-frame,
+.prestige-desert-tire-smoke {
+  pointer-events: none !important;
+  touch-action: none;
+}
+@media (max-width:700px) {
+  .drift-story { height: 150svh; min-height: 680px; }
+  .drift-story:has(.is-desert-3d) { height: 200svh; min-height: 940px; }
+}
