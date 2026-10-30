@@ -177,6 +177,9 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
     let matrixInFlight = false;
     let matrixInFlightSince = 0;
     let viewerOnscreen = false;
+    let lastFrameAt = 0;
+    let severeFrames = 0;
+    let matrixErrors = 0;
     const iframe = iframeRef.current;
     if (!iframe) return;
     const frameObserver = new IntersectionObserver(entries => {
@@ -188,10 +191,28 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
     const timeout = window.setTimeout(() => {
       if (!ready && !cancelled) setState('slow');
     }, 14500);
+    const hardTimeout = window.setTimeout(() => {
+      if (!ready && !cancelled) {
+        setState('error');
+        failureRef.current();
+      }
+    }, 40000);
 
     const tick = () => {
       if (cancelled || !ready || !viewerRef.current) return;
       const now = performance.now();
+      if (viewerOnscreen && !document.hidden && lastFrameAt) {
+        // Persistent sub-8fps is not a usable experience. Free the iframe/GPU
+        // and restore the film instead of locking the visitor's scroll.
+        const delta = now - lastFrameAt;
+        severeFrames = delta > 140 ? severeFrames + 1 : Math.max(0, severeFrames - 1);
+        if (severeFrames >= 12) {
+          setState('error');
+          failureRef.current();
+          return;
+        }
+      }
+      lastFrameAt = now;
       const progressChanged = Math.abs(progressRef.current - lastProgressSentRef.current) > .004;
       // Sketchfab runs in a separate iframe. Never flood the iframe with
       // queued setMatrix messages when it cannot finish one WebGL frame.
@@ -225,8 +246,15 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
             lastProgressSentRef.current = p;
             api.setMatrix(id, matrix.toArray(), error => {
               matrixInFlight = false;
-              if (error && !cancelled) {
-                console.warn('Mercedes 3D transform was rejected by the viewer.');
+              if (cancelled) return;
+              if (error) {
+                matrixErrors += 1;
+                if (matrixErrors >= 3) {
+                  setState('error');
+                  failureRef.current();
+                }
+              } else {
+                matrixErrors = 0;
               }
             });
           }
@@ -258,6 +286,7 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
             if (cancelled) return;
             ready = true;
             window.clearTimeout(timeout);
+            window.clearTimeout(hardTimeout);
             api.setBackground({ color: [0.54, .34, .25] });
             // Standard textures are enough for a scroll-based overview; avoid HD GPU memory pressure.
             api.setTextureQuality?.('sd');
@@ -311,20 +340,25 @@ export default function PrestigeSketchfabMercedes({ progressRef, onFailure, onLo
         error: () => {
           if (cancelled) return;
           window.clearTimeout(timeout);
+          window.clearTimeout(hardTimeout);
           setState('error');
+          failureRef.current();
         },
       });
     }).catch(error => {
       if (cancelled) return;
       console.warn('Original Mercedes Sketchfab 3D viewer unavailable', error);
       window.clearTimeout(timeout);
+      window.clearTimeout(hardTimeout);
       setState('error');
+      failureRef.current();
     });
 
     return () => {
       cancelled = true;
       frameObserver.disconnect();
       window.clearTimeout(timeout);
+      window.clearTimeout(hardTimeout);
       window.cancelAnimationFrame(raf);
       viewerRef.current?.stop?.();
       viewerRef.current = null;
