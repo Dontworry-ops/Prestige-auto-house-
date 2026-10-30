@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import * as THREE from 'three';
 import PrestigeSketchfabMercedes from './PrestigeSketchfabMercedes';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -22,7 +22,7 @@ const MODEL_PARTS = [
 ] as const;
 
 type Props = {
-  scrollProgress: number;
+  progressRef: RefObject<number>;
   onFailure: () => void;
   onLoaded?: () => void;
 };
@@ -135,9 +135,8 @@ async function loadOriginalModel(signal: AbortSignal, onProgress: (n: number) =>
   });
 }
 
-export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, onLoaded }: Props) {
+export default function PrestigeDesertDriftScene({ progressRef, onFailure, onLoaded }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef(scrollProgress);
   const failRef = useRef(onFailure);
   const loadedRef = useRef(onLoaded);
   const [near, setNear] = useState(false);
@@ -145,7 +144,6 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
   const [loadState, setLoadState] = useState<LoadState>('waiting');
   const [percent, setPercent] = useState(0);
 
-  useEffect(() => { progressRef.current = scrollProgress; }, [scrollProgress]);
 
   // Use the owner's original CC BY GLB parts when hosted. Otherwise load the
   // EXACT SAME car through its original Sketchfab source (no replacement car).
@@ -419,7 +417,7 @@ export default function PrestigeDesertDriftScene({ scrollProgress, onFailure, on
   }, [near, assetSource]);
 
   if (assetSource === 'sketchfab') {
-    return <PrestigeSketchfabMercedes scrollProgress={scrollProgress} onFailure={onFailure} onLoaded={onLoaded} />;
+    return <PrestigeSketchfabMercedes progressRef={progressRef} onFailure={onFailure} onLoaded={onLoaded} />;
   }
 
   return (
