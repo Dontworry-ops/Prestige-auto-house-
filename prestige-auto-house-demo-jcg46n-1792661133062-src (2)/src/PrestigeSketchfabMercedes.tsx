@@ -231,7 +231,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                   position: [...camera.position],
                   target: [...camera.target],
                 };
-                pivotRef.current = new Vector3(...camera.target.slice(0, 3));
+                pivotRef.current = new Vector3(camera.target[0], camera.target[1], camera.target[2]);
                 api.setFov(43);
                 // Aim at the centre of the donut, not where the car started.
                 const target = [camera.target[0] - radius, camera.target[1], camera.target[2]];
