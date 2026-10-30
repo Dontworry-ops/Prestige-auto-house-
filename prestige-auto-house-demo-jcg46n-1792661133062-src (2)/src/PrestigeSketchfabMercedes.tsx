@@ -154,10 +154,9 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
         const camera = cameraRef.current;
         if (camera) {
           const t = camera.target;
-          const dx = camera.position[0] - t[0];
-          const dy = camera.position[1] - t[1];
-          const dz = camera.position[2] - t[2];
-          const distance = Math.max(2, Math.hypot(dx,dy,dz));
+          // The exact owner's GLB is 4.65m long. A 13m overhead camera
+          // frames the vehicle sharply without magnifying a tiny WebGL raster.
+          const distance = window.innerWidth < 700 ? 17 : 12.8;
           const radius = Math.min(2.25, Math.max(.25, distance * .12));
           const id = nodeIdRef.current;
           const original = originalPositionRef.current;
@@ -168,7 +167,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
             const follow = clamp((p - .59) / .27);
             const target = [t[0], t[1] - follow * radius * .7, t[2]];
             api.setCameraLookAt(
-              [target[0] + distance * .18, target[1] - distance * .22, target[2] + distance * 1.42],
+              [target[0] + distance * .18, target[1] - distance * .22, target[2] + distance],
               target,
               0.15
             );
@@ -176,7 +175,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
             // Non-editable Sketchfab scene: orbit a wide overhead camera.
             const orbit = -Math.PI / 2 + clamp(p / .59) * Math.PI * 2;
             api.setCameraLookAt(
-              [t[0] + Math.cos(orbit) * distance * .56, t[1] + Math.sin(orbit) * distance * .56, t[2] + distance * 1.42],
+              [t[0] + Math.cos(orbit) * distance * .56, t[1] + Math.sin(orbit) * distance * .56, t[2] + distance],
               t, .14
             );
           }
@@ -213,11 +212,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
               if (cancelled) return;
               api.getCameraLookAt((err, camera) => {
                 if (err || !camera?.position || !camera?.target) return;
-                const base = Math.max(.9, Math.hypot(
-                  camera.position[0] - camera.target[0],
-                  camera.position[1] - camera.target[1],
-                  camera.position[2] - camera.target[2]
-                ));
+                const stageDistance = window.innerWidth < 700 ? 17 : 12.8;
                 // Store the original fitted distance, not the wide shot's
                 // distance. Otherwise each scroll update zooms out a second time.
                 cameraRef.current = {
@@ -226,7 +221,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                 };
                 api.setFov(43);
                 api.setCameraLookAt(
-                  [camera.target[0] + base * .18, camera.target[1] - base * .22, camera.target[2] + base * 1.42],
+                  [camera.target[0] + stageDistance * .18, camera.target[1] - stageDistance * .22, camera.target[2] + stageDistance],
                   camera.target,
                   .15
                 );
@@ -287,7 +282,11 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   const orbitRadius = Math.min(viewportWidth * .10, 170);
   const route = circle(scrollProgress);
   const escape = clamp((scrollProgress - .59) / .27);
-  const fullScale = viewportWidth < 700 ? 5.8 : 4.8;
+  // Once the official 3D API is ready we move its CAMERA closer, preserving
+  // crisp model details. Large CSS magnification is used only while loading.
+  const fullScale = state === 'ready'
+    ? (viewportWidth < 700 ? 1.02 : 1.28)
+    : (viewportWidth < 700 ? 5.1 : 4.5);
   const cameraScale = fullScale * (1 - escape * .32);
   const carOffsetX = route.x * orbitRadius + escape * Math.min(viewportWidth * .19, 290);
   const carOffsetY = route.y * orbitRadius - escape * Math.min(viewportWidth * .1, 150);
