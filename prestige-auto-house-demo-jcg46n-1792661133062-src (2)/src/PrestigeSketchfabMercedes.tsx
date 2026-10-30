@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Matrix4, Vector3 } from 'three';
 
 /**
  * The user's exact, CC BY 4.0 Mercedes-AMG GT3 Evo model,
@@ -20,8 +21,7 @@ type ViewerApi = {
   setCameraLookAt: (position: number[], target: number[], duration?: number) => void;
   getNodeMap: (cb: (error: unknown, nodes: SceneNode[] | Record<string, SceneNode>) => void) => void;
   getMatrix: (id: number, cb: (error: unknown, matrix: ArrayLike<number>) => void) => void;
-  translate: (id: number, point: number[], options: { duration: number }) => void;
-  rotate: (id: number, angleAndAxis: number[], options: { duration: number }) => void;
+  setMatrix: (id: number, matrix: number[], callback?: (error: unknown) => void) => void;
   setBackground: (options: { color: number[] }) => void;
   setUserInteraction?: (enabled: boolean) => void;
   recenterCamera: (cb?: (error: unknown) => void) => void;
@@ -38,8 +38,8 @@ const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
 const CIRCLE_END = .59;
 const ESCAPE_END = .86;
 const SLIP_ANGLE = 20 * Math.PI / 180;
-const circleRadius = (mobile: boolean) => mobile ? .95 : 2.55;
-const stageDistance = (mobile: boolean) => mobile ? 20 : 12.8;
+const circleRadius = (mobile: boolean) => mobile ? 1.0 : 1.6;
+const stageDistance = (mobile: boolean) => mobile ? 20 : 15.2;
 const smoothstep = (x: number) => { const p = clamp(x); return p * p * (3 - 2 * p); };
 
 function driftPose(progress: number, radius: number) {
@@ -87,7 +87,8 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
   const viewerRef = useRef<ViewerApi | null>(null);
   const cameraRef = useRef<CameraPose | null>(null);
   const nodeIdRef = useRef<number | null>(null);
-  const originalPositionRef = useRef<number[] | null>(null);
+  const baseMatrixRef = useRef<Matrix4 | null>(null);
+  const pivotRef = useRef<Vector3 | null>(null);
   const lastSentRef = useRef(0);
   const lastProgressSentRef = useRef(-100);
   const [state, setState] = useState<'loading' | 'ready' | 'slow' | 'error'>('loading');
@@ -161,7 +162,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
       if (cancelled || !ready || !viewerRef.current) return;
       const now = performance.now();
       const progressChanged = Math.abs(progressRef.current - lastProgressSentRef.current) > .003;
-      if (progressChanged && now - lastSentRef.current >= 125 && !document.hidden) {
+      if (progressChanged && now - lastSentRef.current >= 75 && !document.hidden) {
         lastProgressSentRef.current = progressRef.current;
         lastSentRef.current = now;
         const api = viewerRef.current;
@@ -174,17 +175,21 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
           // not the renderer. Camera orbit would make it look as if the car
           // simply spun or if the whole desert were sliding beneath it.
           const id = nodeIdRef.current;
-          const original = originalPositionRef.current;
-          if (id !== null && original) {
-            api.translate(
-              id,
-              [original[0] + pose.x, original[1] + pose.y, original[2]],
-              { duration: 0 }
-            );
-            api.rotate(id, [pose.yaw, 0, 0, 1], { duration: 0 });
+          const baseMatrix = baseMatrixRef.current;
+          const pivot = pivotRef.current;
+          if (id !== null && baseMatrix && pivot) {
+            // One atomic transform per frame. Move and rotate the car about
+            // its TRUE centre, instead of letting two separate viewer calls
+            // fight each other or rotating the mesh around the world's origin.
+            const matrix = new Matrix4()
+              .makeTranslation(pivot.x + pose.x, pivot.y + pose.y, pivot.z)
+              .multiply(new Matrix4().makeRotationAxis(new Vector3(0, 0, 1), pose.yaw))
+              .multiply(new Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z))
+              .multiply(baseMatrix);
+            api.setMatrix(id, matrix.toArray());
           }
-          // If Sketchfab exposes no editable model node, don't counterfeit
-          // the drift by rotating the camera or moving the whole iframe.
+          // If the third-party viewer offers no editable root transform,
+          // preserve the actual model without inventing motion via camera or iframe.
         }
       }
       raf = window.requestAnimationFrame(tick);
@@ -221,12 +226,12 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
                 const mobile = window.innerWidth < 700;
                 const distance = stageDistance(mobile);
                 const radius = circleRadius(mobile);
-                // Store the original fitted distance, not the wide shot's
-                // distance. Otherwise each scroll update zooms out a second time.
+                // The fitted target is our pivot. It doesn't move with the camera.
                 cameraRef.current = {
                   position: [...camera.position],
                   target: [...camera.target],
                 };
+                pivotRef.current = new Vector3(...camera.target.slice(0, 3));
                 api.setFov(43);
                 // Aim at the centre of the donut, not where the car started.
                 const target = [camera.target[0] - radius, camera.target[1], camera.target[2]];
@@ -250,7 +255,7 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
               api.getMatrix(root.instanceID, (error, matrix) => {
                 if (error || !matrix || matrix.length < 16) return;
                 nodeIdRef.current = root.instanceID as number;
-                originalPositionRef.current = [matrix[12],matrix[13],matrix[14]];
+                baseMatrixRef.current = new Matrix4().fromArray(Array.from(matrix));
               });
             });
             setState('ready');
@@ -285,9 +290,8 @@ export default function PrestigeSketchfabMercedes({ scrollProgress, onFailure, o
 
   // The iframe is a fixed stage; it must never drift out of the browser.
   // All real movement is applied to the model node through Sketchfab's API.
-  const stageScale = state === 'ready'
-    ? (typeof window !== 'undefined' && window.innerWidth >= 700 ? 1.28 : 1.02)
-    : 1;
+  // The whole circular path stays within the fixed 3D viewport.
+  const stageScale = 1;
 
   return (
     <div className="prestige-desert-scene prestige-desert-sketchfab">
